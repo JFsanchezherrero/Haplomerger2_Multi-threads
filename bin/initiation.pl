@@ -139,6 +139,8 @@ print "$threads !\n";
 my $file = $file_name.".fa";
 my $file_size = -s $file; #To get only size
 my $block = int($file_size/$threads);
+print $file."\t".$file_size."\t"."$block\n";
+
 open (FH, "<$file") or die "Could not open source file. $!";
 print "\t- Splitting file into blocks of $block characters aprox ...\n";
 my $j = 0; 
