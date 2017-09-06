@@ -243,6 +243,8 @@ sub faSize {
 	print "existing sizes files found! Forced to going on ...\n" if ($has_sizes==1 and $Force==1);
 	
 	##Step2: create the sizes files	
+	
+	## Parallelize
 	my $pm =  new Parallel::ForkManager($threads); ## Number of subprocesses not equal to CPUs. Each subprocesses will have multiple CPUs if available
 	$pm->run_on_finish( 
 		sub { my ($pid, $exit_code, $ident) = @_; 
@@ -262,7 +264,6 @@ sub faSize {
 	}
 	$pm->wait_all_children; print "\n** All child processes have finished...\n\n";
 	system ("cat *sizes >> $file_name.sizes");
-
 	print "====faSize done!====\n\n";	
 }
 
@@ -273,31 +274,30 @@ sub faSplit {
 	
 	#checking the existing directory
 	print "Checking existing directories ... \n";
-	$has_dir = 0;
-	foreach $temp (@Species) {
-		if (-d "$temp.seq.fa") {
-			$has_dir = 1;
-			print "Directory $temp.seq.fa is already existed!\nFiles with identical names might be over-written!\n";
-	    	die "Die! Over-writing $temp.seq.fa is not allowed ( --Force == 0 ) !\n" if ($has_dir==1 and $Force==0);			
-		}
-	}
-
+	mkdir("$file_name.seq.fa");
 	
 	#spliting files
+	## Parallelize
+	my $pm =  new Parallel::ForkManager($threads); ## Number of subprocesses not equal to CPUs. Each subprocesses will have multiple CPUs if available
+	$pm->run_on_finish( 
+		sub { my ($pid, $exit_code, $ident) = @_; 
+		print "\n\n** Child process finished with PID $pid and exit code: $exit_code\n\n"; 
+	} );
+	$pm->run_on_start( sub { my ($pid,$ident)=@_; } );
+	my $counter = 0;
 	foreach $temp (@Species) {
-		print "NOTE that sequence without name is not allowed in $temp.fa.gz ! Splitting ... \n";
-		unless (-d "$temp.seq.fa") { mkdir("$temp.seq.fa") or die "Can not make directory $temp.seq.fa!\n"; }
-		
-		#run the faSplit
-		#system( "faSplit byname $temp.fa $temp.seq/" ); ### old implementation, replaced by the following procedure.
-		foreach my $tt (keys %{$fasta{$temp}}){
-				open($sfaFH, ">$temp.seq.fa/$tt.fa") or die "Can not open $temp.seq.fa/Stt.fa!\n";
-				print $sfaFH ">$tt\n";
-				print $sfaFH "$fasta{$temp}->{$tt}\n";
-				close $sfaFH;
+		$counter++;
+		my $pid = $pm->start($temp, $counter) and next; print "\nSending child command\n\n";
+		foreach my $tt (keys %{$fasta{$temp} }){
+			open($sfaFH, ">$file_name.seq.fa/$tt.fa") or die "Can not open $file_name.seq.fa/Stt.fa!\n";
+			print $sfaFH ">$tt\n$fasta{$temp}->{$tt}\n";
+			close $sfaFH;
 		}
-		print "$temp.fa.gz has been splitted into $temp.seq.fa/\n";
+		print "$temp has been added to into $file_name.seq.fa/\n";
+		$pm->finish($counter); # pass an exit code to finish
 	}
+	$pm->wait_all_children; print "\n** All child processes have finished...\n\n";
+
 	
 	# after this, the fasta sequences are no longer needed to be kept in the memory.
 	undef %fasta;
@@ -312,14 +312,7 @@ sub faToNib {
 	
 	#Step1: checking the existing directory and make it if not existed
 	print "Checking existing directories ... \n";
-	foreach $temp1 (@Species) {
-		if (-d "$temp1.seq") {
-			print "Directory $temp1.seq already exists!\nFiles with identical names might be over-written!\n";
-			#die "Over-writing $temp1.seq is not allowed ( --Force == 0 ) ! Die!\n" if $Force==0;
-		}else{
-			mkdir("$temp1.seq") or die "Can not make directory $temp1.seq!\n"; 
-		}
-	}
+	mkdir("$file_name.seq") or die "Can not make directory $file_name.seq!\n"; 
 	
 	##Step2: checking the existence of nib and fa files in the directory
 	#if no fa files, die!
@@ -348,9 +341,20 @@ sub faToNib {
 
 	##Step3: converting the fa files to nib files
 	print "converting the fa files to nib files ...\n";
+	print "Converting directory $file_name.seq.fa/*.fa to $file_name.seq/*.nib ...\n";
+
+	## Parallelize
+	my $pm =  new Parallel::ForkManager($threads); ## Number of subprocesses not equal to CPUs. Each subprocesses will have multiple CPUs if available
+	$pm->run_on_finish( 
+		sub { my ($pid, $exit_code, $ident) = @_; 
+		print "\n\n** Child process finished with PID $pid and exit code: $exit_code\n\n"; 
+	} );
+	$pm->run_on_start( sub { my ($pid,$ident)=@_; } );
+	my $counter = 0;
+
 	foreach $temp1 (@Species) {
-		print "Converting directory $temp1.seq.fa/*.fa to $temp1.seq/*.nib ...\n";
-		
+		$counter++;
+		my $pid = $pm->start($temp1, $counter) and next; print "\nSending child command\n\n";
 		my $rv;
 		foreach $temp2 (@{$fa_names{$temp1}}) {
 			#if(-f "$temp1.seq.fa/$temp2.fa") { 
@@ -360,10 +364,12 @@ sub faToNib {
 			#}else{
 			#  die "Can not find $temp1.seq.fa/$temp2.fa !\n"; 
 			#}
-			$rv=system("faToNib -softMask $temp1.seq.fa/$temp2.fa $temp1.seq/$temp2.nib");
-			die "Can not find $temp1.seq.fa/$temp2.fa !\n" if $rv>0;
+			$rv=system("faToNib -softMask $file_name.seq.fa/$temp2.fa $file_name.seq/$temp2.nib");
+			die "Can not find $file_name.seq.fa/$temp2.fa !\n" if $rv>0;
 		}
+		$pm->finish($counter); # pass an exit code to finish
 	}
+	$pm->wait_all_children; print "\n** All child processes have finished...\n\n";
 	print "====faToNib done!====\n\n";
 }
 
