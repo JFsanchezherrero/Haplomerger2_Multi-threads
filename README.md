@@ -1,5 +1,5 @@
-# Haplomerger2_Multi-threads
-Multi thread implementation of Haplomerger2
+# Haplomerger2 Multi-threads Implementation
+Parallel implementation of Haplomerger2
 
 HaploMerger2 (HM2) is an important upgrade over HaploMerger. Check the original Haplomerger2 details at: https://github.com/mapleforest/HaploMerger2
 
