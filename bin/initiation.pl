@@ -1,5 +1,9 @@
 #!/usr/bin/perl  
 
+## Version 1.6
+## Changes:
+## Threads implemented by JFSanchezHerrero
+
 ## Version 1.50
 ## changes:
 ## Do not correct illegal characters in the fasta sequences, just report errors and die.
@@ -266,8 +270,8 @@ sub faToNib {
 	print "Checking existing directories ... \n";
 	foreach $temp1 (@Species) {
 		if (-d "$temp1.seq") {
-			print "Directory $temp1.seq is already existed!\nFiles with identical names might be over-written!\n";
-			die "Over-writing $temp1.seq is not allowed ( --Force == 0 ) ! Die!\n" if $Force==0;
+			print "Directory $temp1.seq already exists!\nFiles with identical names might be over-written!\n";
+			#die "Over-writing $temp1.seq is not allowed ( --Force == 0 ) ! Die!\n" if $Force==0;
 		}else{
 			mkdir("$temp1.seq") or die "Can not make directory $temp1.seq!\n"; 
 		}
