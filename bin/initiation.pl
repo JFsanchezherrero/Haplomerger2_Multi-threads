@@ -243,15 +243,8 @@ sub faSize {
 	
 	##Step1: check for existing sizes file, if existes, die or not depends on the $Force
 	print "checking existing sizes files ...\n";
-	$has_sizes=0;
-	foreach $temp1 (@Species) { 
-		if (-f "$tmpDir/$temp1.sizes") { $has_sizes=1; print "$tmpDir/$temp1.sizes\n"; }
-	}
-	die "existing sizes files found and can not be over-written (--Force == 0)! Die!\n" if ($has_sizes==1 and $Force==0);
-	print "existing sizes files found! Forced to going on ...\n" if ($has_sizes==1 and $Force==1);
 	
 	##Step2: create the sizes files	
-	
 	## Parallelize
 	my $pm =  new Parallel::ForkManager($threads); ## Number of subprocesses not equal to CPUs. Each subprocesses will have multiple CPUs if available
 	$pm->run_on_finish( 
@@ -264,7 +257,10 @@ sub faSize {
 	foreach $temp1 (@Species) {
 		$counter++;
 		my $pid = $pm->start($temp1, $counter) and next; print "\nSending child command\n\n";
-		open($sizeFH, ">$tmpDir/$temp1.sizes") or die "Can not open $tmpDir/$temp1.sizes!\n";	  
+		my $tmp_sizeFile = $tmpDir/$temp1.".sizes";
+		print "Printing into: $tmp_sizeFile\n";
+		open($sizeFH, ">$tmp_sizeFile") or die "Can not open $tmp_sizeFile!\n";	  
+    	
     	foreach $temp2 (keys %{ $fasta{$temp1} } ) {
 			print $sizeFH "$temp2\t".length($fasta{$temp1}->{$temp2})."\n";
 		} close $sizeFH;
