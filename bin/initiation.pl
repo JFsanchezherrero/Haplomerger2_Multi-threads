@@ -136,7 +136,7 @@ print "$threads !\n";
 
 ## Split given fasta file in as many CPUs as expected and send multiple threads for each
 # Splits fasta file and takes into account to add the whole sequence if it is broken
-my $file = $file_name;
+my $file = $file_name.".fa";
 my $file_size = -s $file; #To get only size
 my $block = int($file_size/$threads);
 open (FH, "<$file") or die "Could not open source file. $!";
@@ -144,11 +144,9 @@ print "\t- Splitting file into blocks of $block characters aprox ...\n";
 my $j = 0; 
 my @Species;
 my @name = split("/", $file);
-my $fileName = $name[-1];
 while (1) {
 		my $chunk;
-		my @tmp = split ("\.fasta", $fileName);
-		my $block_file = $tmp[0]."_part-".$j."_tmp.fasta";
+		my $block_file = $file_name."_part-".$j."_tmp.fasta";
 		push (@Species, $block_file);
 		open(OUT, ">$block_file") or die "Could not open destination file";
 		if (!eof(FH)) { read(FH, $chunk,$block);  
@@ -169,6 +167,8 @@ close(FH);
 my %fasta; #{species}->{name}=seq
 my %fa_names; ##{species}->[names list]
 foreach my $temp (@Species){
+  
+  print "Reading: $temp\n";
   
   $fasta{$temp}={};
   
@@ -261,6 +261,7 @@ sub faSize {
 		$pm->finish($counter); # pass an exit code to finish
 	}
 	$pm->wait_all_children; print "\n** All child processes have finished...\n\n";
+
 	system ("cat *sizes >> $file_name.sizes")
 
 	print "====faSize done!====\n\n";	

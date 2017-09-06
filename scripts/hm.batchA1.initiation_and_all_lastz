@@ -27,10 +27,10 @@ if [ $# -eq 0 ]
 		echo "gzip compressed fasta file called assembly_name.fa.gz ."
 		echo 
 		exit 1
-	elif [ ! -f $1 ]
+	elif [ ! -f $1.fa ]
 	then
 		echo
-		echo "$1 is not found !"
+		echo "$1.fa is not found !"
 		echo 
 		exit 1	
 fi
@@ -61,7 +61,7 @@ echo
 rm -f -r $name.seq ${name}x.seq $name.sizes ${name}x.sizes ${name}x.fa.gz
 initiation.pl --faSize --threads=$2 --Species=$name --Force --Delete 1>_A1.initiation.log 2>>_A1.initiation.log
 #initiation.pl --faSplit --faToNib --faSize --threads=$2 --Species $name --Force --Delete 1>_A1.initiation.log 2>>_A1.initiation.log
-ln -s $name ${name}x
+ln -s $name.fa ${name}x.fa
 ln -s $name.sizes ${name}x.sizes
 ln -s $name.seq ${name}x.seq
 
