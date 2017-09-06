@@ -257,8 +257,10 @@ sub faSize {
 	foreach $temp1 (@Species) {
 		$counter++;
 		my $pid = $pm->start($temp1, $counter) and next; print "\nSending child command\n\n";
-		my $tmp_sizeFile = $tmpDir/$temp1.".sizes";
+		
+		my $tmp_sizeFile = $temp1.".sizes";
 		print "Printing into: $tmp_sizeFile\n";
+		
 		open($sizeFH, ">$tmp_sizeFile") or die "Can not open $tmp_sizeFile!\n";	  
     	
     	foreach $temp2 (keys %{ $fasta{$temp1} } ) {
@@ -267,7 +269,7 @@ sub faSize {
 		$pm->finish($counter); # pass an exit code to finish
 	}
 	$pm->wait_all_children; print "\n** All child processes have finished...\n\n";
-	system ("cat $tmpDir/*sizes >> $file_name.sizes");
+	system ("cat *sizes >> $file_name.sizes");
 	print "====faSize done!====\n\n";	
 }
 
