@@ -189,8 +189,7 @@ foreach my $temp (@Species){
   while($line=<$inFH>){
   	last if $line =~ m/^>/;
   }	
-  die "Problems with the fasta file; no symbol > found !\n" unless defined($line);
-  
+  die "Problems with the fasta file; no symbol > found !\n" unless defined($line);  
   while($is_the_end==0){
   	
   	($name,$seq)=('','');

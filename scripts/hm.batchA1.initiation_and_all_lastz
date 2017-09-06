@@ -60,7 +60,8 @@ echo
 
 rm -f -r $name.seq ${name}x.seq $name.sizes ${name}x.sizes ${name}x.fa.gz
 initiation.pl --faSplit --faToNib --faSize --threads=$2 --Species $name --Force --Delete 1>_A1.initiation.log 2>>_A1.initiation.log
-ln -s $name.fa ${name}x.fa
+gzip $name.fa
+ln -s $name.fa.gz ${name}x.fa.gz
 ln -s $name.sizes ${name}x.sizes
 ln -s $name.seq ${name}x.seq
 
