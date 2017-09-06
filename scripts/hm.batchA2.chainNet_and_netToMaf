@@ -54,17 +54,11 @@ echo
 #### ===========================================================
 #### run axtChainRecipBestNet
 #### ===========================================================
-
-HM_axtChainRecipBestNet.pl --rbestNet --axtChain --tbest --zeroMinSpaceNet \
-  --threads=$threads \
-	--axtSuffix=axt.noself --linearGap=medium --minScore=5000 --minSpace=100 --minScore2=10000 \
-	--Species $name ${name}x --Force --Delete \
-	1>_A2.axtChainRecipBestNet.log 2>>_A2.axtChainRecipBestNet.log
+HM_axtChainRecipBestNet.pl --rbestNet --axtChain --tbest --zeroMinSpaceNet --threads=$threads --axtSuffix=axt.noself --linearGap=medium --minScore=5000 --minSpace=100 --minScore2=10000 --Species $name ${name}x --Force --Delete 1>_A2.axtChainRecipBestNet.log 2>>_A2.axtChainRecipBestNet.log
 
 #### ===========================================================
 #### run netToMaf (disabled)
 #### ===========================================================
-
 #rm -f $name.${name}x.result/mafFiltered.net.gz
 #ln -s all.rbest.net.gz $name.${name}x.result/mafFiltered.net.gz
 #perl ../bin/HM_netToAxtMaf.pl --Species $name ${name}x --Force --netFile=mafFiltered.net.gz --chainFile=all.rbest.chain.gz 1>_netToMaf.log 2>>_netToMaf.log

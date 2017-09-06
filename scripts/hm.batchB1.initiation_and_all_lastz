@@ -59,8 +59,9 @@ echo
 #### ===========================================================
 
 rm -f -r $name.seq ${name}x.seq $name.sizes ${name}x.sizes ${name}x.fa.gz
-initiation.pl --faSplit --faToNib --faSize --Species $name --Force --Delete \
-  1>_B1.initiation.log 2>>_B1.initiation.log
+gunzip $name.fa.gz
+initiation.pl --faSplit --faToNib --threads=$2 --faSize --Species $name --Force --Delete 1>_B1.initiation.log 2>>_B1.initiation.log
+gzip $name.fa.gz
 ln -s $name.fa.gz ${name}x.fa.gz
 ln -s $name.sizes ${name}x.sizes
 ln -s $name.seq ${name}x.seq
@@ -70,9 +71,6 @@ ln -s $name.seq ${name}x.seq
 #### ===========================================================
 
 ## require two control files: 1) all_lastz.ctl|$name.{name}x.ctl, and 2) scoreMatrix.q|$name.${name}x.q
-
 rm -f -r $name.${name}x.result/raw.axt
-HM_all_lastz_mThreads.pl --Species $name ${name}x --notrivial --radius=5000 --threads=$threads --identity=$identity \
-  --targetSize=$targetSize --querySize=$querySize --Force --Delete \
-  1>_B1.all_lastz.log 2>>_B1.all_lastz.log
+HM_all_lastz_mThreads.pl --Species $name ${name}x --notrivial --radius=5000 --threads=$threads --identity=$identity --targetSize=$targetSize --querySize=$querySize --Force --Delete 1>_B1.all_lastz.log 2>>_B1.all_lastz.log
 

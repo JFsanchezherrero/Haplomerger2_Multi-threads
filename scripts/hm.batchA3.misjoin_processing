@@ -74,20 +74,12 @@ echo
 #### ===========================================================
 #### preparation - to convert the net infomation
 #### ===========================================================
-
-HM_pathFinder_preparation.pl --Species $name ${name}x \
-  --scoreScheme=$scoreScheme --filter=$filterScore_1 --Force --Delete \
-  1>_A3.pathFinder_preparation.log 2>>_A3.pathFinder_preparation.log
+HM_pathFinder_preparation.pl --Species $name ${name}x --scoreScheme=$scoreScheme --filter=$filterScore_1 --Force --Delete 1>_A3.pathFinder_preparation.log 2>>_A3.pathFinder_preparation.log
 
 #### ===========================================================
 #### find the paths and detect misjoins
 #### ===========================================================
-
-HM_pathFinder.pl --Species $name ${name}x \
-  --Force --Delete --scoreScheme=$scoreScheme --filter=$filterScore_2 \
-	--NsLCsFilter=$NsLCsFilter --noSelfLoop=$noSelfLoop --noStrandConflict=$noStrandConflict --breakingMode=$breakingMode \
-	--misjoin_aliFilter=$aliFilter --misjoin_overhangFilter=$overhangFilter --escapeFilter=$escapeFilter \
-	1>_A3.pathFinder.log 2>>_A3.pathFinder.log
+HM_pathFinder.pl --Species $name ${name}x --Force --Delete --scoreScheme=$scoreScheme --filter=$filterScore_2 --NsLCsFilter=$NsLCsFilter --noSelfLoop=$noSelfLoop --noStrandConflict=$noStrandConflict --breakingMode=$breakingMode --misjoin_aliFilter=$aliFilter --misjoin_overhangFilter=$overhangFilter --escapeFilter=$escapeFilter 1>_A3.pathFinder.log 2>>_A3.pathFinder.log
 
 #### ===========================================================
 #### break misjoining points and output the new scaffolds
