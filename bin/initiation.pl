@@ -261,7 +261,7 @@ sub faSize {
 		$pm->finish($counter); # pass an exit code to finish
 	}
 	$pm->wait_all_children; print "\n** All child processes have finished...\n\n";
-	system ("cat *sizes >> $file_name.sizes")
+	system ("cat *sizes >> $file_name.sizes");
 
 	print "====faSize done!====\n\n";	
 }
