@@ -135,15 +135,13 @@ $,=' ';
 # set the over-write flag, to over-write any existing files
 my $Force=0;
 if ($Arg_list =~ m/--Force/) {
-	$Force = 1;
-	print "Set to OVER-WRITING mode!\n";
+	$Force = 1; print "Set to OVER-WRITING mode!\n";
 }
 
 # set the deletion flag
 my $Delete=0;
 if ($Arg_list =~ m/--Delete/) {
-	$Delete = 1;
-	print "Set to Delete mode!\n";
+	$Delete = 1; print "Set to Delete mode!\n";
 }
 
 # Store species names and to check if all prerequesite data are in proper conditions.

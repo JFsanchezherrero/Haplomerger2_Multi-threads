@@ -134,12 +134,14 @@ if ($Arg_list =~ m/--threads=(\d+)/){
 }
 print "$threads !\n";
 
+my $tmpDir = "./intermediate_results";
+mkdir $tmpDir, 0755;
+
 ## Split given fasta file in as many CPUs as expected and send multiple threads for each
 # Splits fasta file and takes into account to add the whole sequence if it is broken
 my $file = $file_name.".fa";
 my $file_size = -s $file; #To get only size
 my $block = int($file_size/$threads);
-print $file."\t".$file_size."\t"."$block\n";
 
 open (FH, "<$file") or die "Could not open source file. $!";
 print "\t- Splitting file into blocks of $block characters aprox ...\n";
@@ -148,7 +150,7 @@ my @Species;
 my @name = split("/", $file);
 while (1) {
 		my $chunk;
-		my $block_file = $file_name."_part-".$j."_tmp.fasta";
+		my $block_file = $tmpDir."/".$file_name."_part-".$j."_tmp.fasta";
 		push (@Species, $block_file);
 		open(OUT, ">$block_file") or die "Could not open destination file";
 		if (!eof(FH)) { read(FH, $chunk,$block);  
@@ -165,15 +167,19 @@ while (1) {
 }
 close(FH);
 
+open(OUT, ">myFiles.txt");
+for (my $i=0; $i <scalar @Species; $i++) {
+	print OUT $Species[$i]."\n";
+}
+close (OUT);
+
 # read in the fasta file
 my %fasta; #{species}->{name}=seq
 my %fa_names; ##{species}->[names list]
 foreach my $temp (@Species){
   
-  print "\t- Reading: $temp\n";
-  
-  $fasta{$temp}={};
-  
+  print "\t- Reading: $temp\n";  
+  $fasta{$temp}={};  
   my $inFH;
   unless(-f $temp){ die "Can not find $temp file!\n"; }
   open($inFH, "<$temp") or die "Can not open $temp file!\n";
@@ -239,7 +245,7 @@ sub faSize {
 	print "checking existing sizes files ...\n";
 	$has_sizes=0;
 	foreach $temp1 (@Species) { 
-		if (-f "$temp1.sizes") { $has_sizes=1; print "$temp1.sizes\n"; }
+		if (-f "$tmpDir/$temp1.sizes") { $has_sizes=1; print "$tmpDir/$temp1.sizes\n"; }
 	}
 	die "existing sizes files found and can not be over-written (--Force == 0)! Die!\n" if ($has_sizes==1 and $Force==0);
 	print "existing sizes files found! Forced to going on ...\n" if ($has_sizes==1 and $Force==1);
@@ -258,14 +264,14 @@ sub faSize {
 	foreach $temp1 (@Species) {
 		$counter++;
 		my $pid = $pm->start($temp1, $counter) and next; print "\nSending child command\n\n";
-		open($sizeFH, ">$temp1.sizes") or die "Can not open Stemp1.sizes!\n";	  
+		open($sizeFH, ">$tmpDir/$temp1.sizes") or die "Can not open $tmpDir/$temp1.sizes!\n";	  
     	foreach $temp2 (keys %{ $fasta{$temp1} } ) {
 			print $sizeFH "$temp2\t".length($fasta{$temp1}->{$temp2})."\n";
 		} close $sizeFH;
 		$pm->finish($counter); # pass an exit code to finish
 	}
 	$pm->wait_all_children; print "\n** All child processes have finished...\n\n";
-	system ("cat *sizes >> $file_name.sizes");
+	system ("cat $tmpDir/*sizes >> $file_name.sizes");
 	print "====faSize done!====\n\n";	
 }
 
@@ -290,6 +296,7 @@ sub faSplit {
 	foreach $temp (@Species) {
 		$counter++;
 		my $pid = $pm->start($temp, $counter) and next; print "\nSending child command\n\n";
+		
 		foreach my $tt (keys %{$fasta{$temp} }){
 			open($sfaFH, ">$file_name.seq.fa/$tt.fa") or die "Can not open $file_name.seq.fa/Stt.fa!\n";
 			print $sfaFH ">$tt\n$fasta{$temp}->{$tt}\n";
@@ -303,7 +310,6 @@ sub faSplit {
 	
 	# after this, the fasta sequences are no longer needed to be kept in the memory.
 	undef %fasta;
-
 	print "====faSplit done!====\n\n";
 }
 
