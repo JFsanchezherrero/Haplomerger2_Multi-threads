@@ -49,6 +49,10 @@
 
 use strict; 
 use warnings;
+use Data::Dumper;
+use FindBin;
+use lib $FindBin::Bin."/lib";
+use Parallel::ForkManager;
 
 my $Arg_list = join " ", @ARGV;
 if (@ARGV < 1 || $Arg_list =~ m/--help|-\?/) { print <<'USAGES' and exit }
@@ -112,31 +116,56 @@ my $timer = time();
 # set the over-write flag, to over-write any existed files
 my $Force=0;
 if ($Arg_list =~ m/--Force/) {
-	$Force = 1;
-	print "Set to OVER-WRITING mode!\n";
+	$Force = 1; print "Set to OVER-WRITING mode!\n";
 }
-
 #set the output_field_separator to " "
 $,=' ';
 
 # Store species names
-my @Species;
-unless ($Arg_list =~ m/--Species\s+([^-]*)/) {die "No --Species argument or species_names found!\n" }
-unless (@Species = $1 =~ m/(\w+)/g)  {die "No species names found!\n" };
-print "Species included: ", @Species, "\n";
+my $file_name;
+unless ($Arg_list =~ m/--Species=(\S+)/) {die "No --Species argument or species_names found!\n" }
+$file_name = $1;
+print "Species included: ", $file_name, "\n";
 
 print "Thread number is set to ... ";
-my $thread_count = 1;
+my $threads = 1;
 if ($Arg_list =~ m/--threads=(\d+)/){
-	$thread_count = $1 > 0 ? $1 : 1;
+	$threads = $1 > 0 ? $1 : 1;
 }
-print "$thread_count !\n";
+print "$threads !\n";
 
-print "STOPPING HERE!\n";
-exit();
+## Split given fasta file in as many CPUs as expected and send multiple threads for each
+# Splits fasta file and takes into account to add the whole sequence if it is broken
+my $file = $file_name;
+my $file_size = -s $file; #To get only size
+my $block = int($file_size/$threads);
+open (FH, "<$file") or die "Could not open source file. $!";
+print "\t- Splitting file into blocks of $block characters aprox ...\n";
+my $j = 0; 
+my @Species;
+my @name = split("/", $file);
+my $fileName = $name[-1];
+while (1) {
+		my $chunk;
+		my @tmp = split ("\.fasta", $fileName);
+		my $block_file = $tmp[0]."_part-".$j."_tmp.fasta";
+		push (@Species, $block_file);
+		open(OUT, ">$block_file") or die "Could not open destination file";
+		if (!eof(FH)) { read(FH, $chunk,$block);  
+				if ($j > 0) { $chunk = ">".$chunk; }
+				print OUT $chunk;
+		} ## Print the amount of chars  
+		if (!eof(FH)) { $chunk = <FH>; print OUT $chunk; } ## print the whole line if it is broken      
+		if (!eof(FH)) { 
+				$/ = ">"; ## Telling perl where a new line starts
+				$chunk = <FH>; chop $chunk; print OUT $chunk; 
+				$/ = "\n";
+		} ## print the sequence if it is broken
+		$j++; close(OUT); last if eof(FH);
+}
+close(FH);
 
-
-# read in the fa.gz file
+# read in the fasta file
 my %fasta; #{species}->{name}=seq
 my %fa_names; ##{species}->[names list]
 foreach my $temp (@Species){
@@ -144,8 +173,8 @@ foreach my $temp (@Species){
   $fasta{$temp}={};
   
   my $inFH;
-  unless(-f "$temp.fa.gz"){ die "Can not find $temp.fa.gz file!\n"; }
-  open($inFH, "gunzip -c $temp.fa.gz | ") or die "Can not open $temp.fa.gz file!\n";
+  unless(-f $temp){ die "Can not find $temp file!\n"; }
+  open($inFH, "<$temp") or die "Can not open $temp file!\n";
   
   my ($line,$name,$seq,$is_the_end)=("","","",0);
   
@@ -157,11 +186,7 @@ foreach my $temp (@Species){
   while($is_the_end==0){
   	
   	($name,$seq)=('','');
-  	
-  	if($line =~ m/^>(\S+)/){
-  		$name=$1;
-  	}
-    
+  	if($line =~ m/^>(\S+)/){ $name=$1; }
     if(length($name)<1){ die "Species ( $temp ) : fasta name format error.\n"; }
     push @{$fa_names{$temp}},$name;
   
@@ -173,15 +198,14 @@ foreach my $temp (@Species){
   	$is_the_end=1 unless defined($line);
   	
   	if($seq=~m/[^acgtACGTnN]/){
-  	  die "Species ( $temp ) has a sequence ( $name ) containing illegal characters !\n";
+  	  die "File ( $temp ) has a sequence ( $name ) containing illegal characters !\n";
   	}
   	
   	if(!defined($fasta{$temp}->{$name})){
   	  $fasta{$temp}->{$name}=$seq;
   	}else{
-  	  die "Species ( $temp ) has a duplicate seq name ($name  ) !\n";
-  	}
-  }
+  	  die "File ( $temp ) has a duplicate seq name ($name  ) !\n";
+  }}
   close $inFH;
 }
 
@@ -199,12 +223,7 @@ tbaFaCr if ($Arg_list =~ m/--tbaFaCr/);
 nibFrag if ($Arg_list =~ m/--nibFrag/);
 multiFa if ($Arg_list =~ m/--multiFa/);
 
-if ($Arg_list =~ m/--Delete/) {
-	foreach my $temp (@Species) {
-		system("rm -fr $temp.seq.fa");
-	}
-}
-
+if ($Arg_list =~ m/--Delete/) { foreach my $temp (@Species) { system("rm -fr $temp.seq.fa");}}
 print "\n\n========== Time used = ", time()-$timer, " seconds or ", (time()-$timer)/3600, " hours.\n\n";
 
 ############################## All subroutines ####################################
@@ -220,17 +239,30 @@ sub faSize {
 	foreach $temp1 (@Species) { 
 		if (-f "$temp1.sizes") { $has_sizes=1; print "$temp1.sizes\n"; }
 	}
-	die "existing sizes files found anc can not be over-written (--Force == 0)! Die!\n" if ($has_sizes==1 and $Force==0);
+	die "existing sizes files found and can not be over-written (--Force == 0)! Die!\n" if ($has_sizes==1 and $Force==0);
 	print "existing sizes files found! Forced to going on ...\n" if ($has_sizes==1 and $Force==1);
 	
-	##Step2: create the sizes files
+	##Step2: create the sizes files	
+	my $pm =  new Parallel::ForkManager($threads); ## Number of subprocesses not equal to CPUs. Each subprocesses will have multiple CPUs if available
+	$pm->run_on_finish( 
+		sub { my ($pid, $exit_code, $ident) = @_; 
+		print "\n\n** Child process finished with PID $pid and exit code: $exit_code\n\n"; 
+	} );
+	$pm->run_on_start( sub { my ($pid,$ident)=@_; } );
+	
+	my $counter = 0;
 	foreach $temp1 (@Species) {
+		$counter++;
+		my $pid = $pm->start($temp1, $counter) and next; print "\nSending child command\n\n";
 		open($sizeFH, ">$temp1.sizes") or die "Can not open Stemp1.sizes!\n";	  
-    foreach $temp2 (keys %{$fasta{$temp1}}) {
+    	foreach $temp2 (keys %{ $fasta{$temp1} } ) {
 			print $sizeFH "$temp2\t".length($fasta{$temp1}->{$temp2})."\n";
-		}
-		close $sizeFH;
+		} close $sizeFH;
+		$pm->finish($counter); # pass an exit code to finish
 	}
+	$pm->wait_all_children; print "\n** All child processes have finished...\n\n";
+	system ("cat *sizes >> $file_name.sizes")
+
 	print "====faSize done!====\n\n";	
 }
 
@@ -246,7 +278,7 @@ sub faSplit {
 		if (-d "$temp.seq.fa") {
 			$has_dir = 1;
 			print "Directory $temp.seq.fa is already existed!\nFiles with identical names might be over-written!\n";
-	    die "Die! Over-writing $temp.seq.fa is not allowed ( --Force == 0 ) !\n" if ($has_dir==1 and $Force==0);			
+	    	die "Die! Over-writing $temp.seq.fa is not allowed ( --Force == 0 ) !\n" if ($has_dir==1 and $Force==0);			
 		}
 	}
 
