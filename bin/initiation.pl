@@ -123,7 +123,7 @@ $,=' ';
 
 # Store species names
 my $file_name;
-unless ($Arg_list =~ m/--Species\s+([^-]*)/) {die "No --Species argument or species_names found!\n" }
+unless ($Arg_list =~ m/--Species\s+(\S+)/) {die "No --Species argument or species_names found!\n" }
 $file_name = $1;
 print "Species included: ", $file_name, "\n";
 
