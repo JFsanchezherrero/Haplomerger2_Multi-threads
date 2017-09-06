@@ -85,6 +85,7 @@ Other procedures:
       NOTES: a correct fa sizes file is required. 
 
 Options:
+   --threads=N - specified N threads/CPUs for use (default=1)   
    --Species - mandatory, to provide species names which are wanted to be 
       processed
       Example: --Species human chimp rhesus
@@ -124,12 +125,14 @@ unless ($Arg_list =~ m/--Species\s+([^-]*)/) {die "No --Species argument or spec
 unless (@Species = $1 =~ m/(\w+)/g)  {die "No species names found!\n" };
 print "Species included: ", @Species, "\n";
 
-my $threads;
-if ($Arg_list =~ m/--threads=(\d+)\s+/) {
-	$threads = $1;
-	print "Threads: $threads CPUs to use\n";
-};
+print "Thread number is set to ... ";
+my $thread_count = 1;
+if ($Arg_list =~ m/--threads=(\d+)/){
+	$thread_count = $1 > 0 ? $1 : 1;
+}
+print "$thread_count !\n";
 
+print "STOPPING HERE!\n";
 exit();
 
 
