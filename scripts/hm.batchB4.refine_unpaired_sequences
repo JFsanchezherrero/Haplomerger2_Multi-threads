@@ -9,7 +9,7 @@
 #### setting variables
 name=$1								# the species_name or the prefix of the genome file name
 runLastzChainNet=1    # run lastz and chainNet (default=yes)
-threads=$2							# the number of cpu cores to use (default=1)
+threads=1							# the number of cpu cores to use (default=1)
 identity=75           # identity threshold for HM_all_lastz_mThreads.pl (def=50)
                       # normally, you do not need to change identity because the program will optimize it 
 maskFilter=85         # filter sequences in which XX% are soft-masked and Ns (default=85, recommand 80, 85, 90)
@@ -55,7 +55,7 @@ echo
 #### refine the unpaired sequences
 #### ===========================================================
 
-HM_unincorpRefiner.pl --Species $name ${name}x \
+perl ../bin/HM_unincorpRefiner.pl --Species $name ${name}x \
   --runLastzChainNet=$runLastzChainNet --threads=$threads  \
 	--identity=$identity --maskFilter=$maskFilter            \
 	--redundantFilter=$redundantFilter --Force --Delete      \

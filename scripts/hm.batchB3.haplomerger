@@ -80,7 +80,7 @@ echo
 #### preparation - to convert the net infomation
 #### ===========================================================
 
-HM_pathFinder_preparation.pl --Species $name ${name}x --Force --Delete \
+perl ../bin/HM_pathFinder_preparation.pl --Species $name ${name}x --Force --Delete \
   --scoreScheme=$scoreScheme --filter=$filterScore_1 \
   1>_B3.pathFinder_preparation.log 2>>_B3.pathFinder_preparation.log
 
@@ -88,7 +88,7 @@ HM_pathFinder_preparation.pl --Species $name ${name}x --Force --Delete \
 #### find the paths and detect misjoins
 #### ===========================================================
 
-HM_pathFinder.pl --Species $name ${name}x --Force --Delete --scoreScheme=$scoreScheme --filter=$filterScore_2 \
+perl ../bin/HM_pathFinder.pl --Species $name ${name}x --Force --Delete --scoreScheme=$scoreScheme --filter=$filterScore_2 \
 	--NsLCsFilter=$NsLCsFilter --noSelfLoop=$noSelfLoop --noStrandConflict=$noStrandConflict --breakingMode=$breakingMode \
 	--misjoin_aliFilter=$aliFilter --misjoin_overhangFilter=$overhangFilter --escapeFilter=$escapeFilter \
 	1>_B3.pathFinder.log 2>>_B3.pathFinder.log
@@ -97,7 +97,7 @@ HM_pathFinder.pl --Species $name ${name}x --Force --Delete --scoreScheme=$scoreS
 #### output haplomic assemblies
 #### ===========================================================
 
-XHM_haploMerger.pl --Species $name ${name}x --Force --Delete  \
+perl ../bin/XHM_haploMerger.pl --Species $name ${name}x --Force --Delete  \
   --selectLongHaplotype --minOverlap=$minOverlap  \
   1>_B3.haploMerger.log 2>>_B3.haploMerger.log
 
@@ -106,13 +106,13 @@ XHM_haploMerger.pl --Species $name ${name}x --Force --Delete  \
 #### ===========================================================
 
 gunzip -c $name.${name}x.result/optiNewScaffolds.fa.gz \
-	| faDnaPolishing.pl --legalizing --noLeadingN --removeShortSeq=500 2>_B1.faDnaPolishing.log \
+	| perl ../bin/faDnaPolishing.pl --legalizing --noLeadingN --removeShortSeq=500 2>_B1.faDnaPolishing.log \
 	| gzip -c > $name.${name}x.result/optiNewScaffolds_new.fa.gz
 gunzip -c $name.${name}x.result/optiNewScaffolds_alt.fa.gz \
-	| faDnaPolishing.pl --legalizing --noLeadingN --removeShortSeq=500 2>>_B1.faDnaPolishing.log \
+	| perl ../bin/faDnaPolishing.pl --legalizing --noLeadingN --removeShortSeq=500 2>>_B1.faDnaPolishing.log \
 	| gzip -c > $name.${name}x.result/optiNewScaffolds_alt_new.fa.gz
 gunzip -c $name.${name}x.result/unpaired.fa.gz \
-	| faDnaPolishing.pl --legalizing --noLeadingN --removeShortSeq=500 2>>_B1.faDnaPolishing.log \
+	| perl ../bin/faDnaPolishing.pl --legalizing --noLeadingN --removeShortSeq=500 2>>_B1.faDnaPolishing.log \
 	| gzip -c > $name.${name}x.result/unpaired_new.fa.gz
 	
 rm -f $name.${name}x.result/optiNewScaffolds.fa.gz  \

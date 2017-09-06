@@ -6,7 +6,7 @@
 
 #### setting variables
 name=$1								# the species_name or the prefix of the genome file name
-threads=$2							# the number of cpu cores to use (default=1)
+threads=1							# the number of cpu cores to use (default=1)
 
 ###################################################################################################
 #### running
@@ -52,7 +52,7 @@ echo
 #### run axtChainRecipBestNet
 #### ===========================================================
 		
-HM_axtChainRecipBestNet.pl --rbestNet --axtChain --threads=$threads \
+perl ../bin/HM_axtChainRecipBestNet.pl --rbestNet --axtChain --threads=$threads \
 	--axtSuffix=axt.self.notrivial --linearGap=medium --minScore=25000 --minSpace=200 --minScore2=30000 \
 	--Species $name ${name}x --Force --Delete \
 	1>_D2.axtChainRecipBestNet.log 2>>_D2.axtChainRecipBestNet.log

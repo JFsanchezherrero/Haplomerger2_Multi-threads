@@ -6,7 +6,7 @@
 
 #### setting variables
 name=$1								# the species_name or the prefix of the genome file name
-threads=$2							# the number of cpu cores to use (default=1)
+threads=1							# the number of cpu cores to use (default=1)
 identity=80						# output only lastz alignments >= $identity (default=80)
                       # normally, you do not need to change identity because the program will optimize it 
 targetSize=50000000   # split target fasta file by size N bp (default=50000000)
@@ -59,7 +59,7 @@ echo
 #### ===========================================================
 
 rm -f -r $name.seq ${name}x.seq $name.sizes ${name}x.sizes ${name}x.fa.gz
-initiation.pl --faSplit --faToNib --faSize --Species $name --Force --Delete \
+perl ../bin/initiation.pl --faSplit --faToNib --faSize --Species $name --Force --Delete \
   1>_B1.initiation.log 2>>_B1.initiation.log
 ln -s $name.fa.gz ${name}x.fa.gz
 ln -s $name.sizes ${name}x.sizes
@@ -72,7 +72,7 @@ ln -s $name.seq ${name}x.seq
 ## require two control files: 1) all_lastz.ctl|$name.{name}x.ctl, and 2) scoreMatrix.q|$name.${name}x.q
 
 rm -f -r $name.${name}x.result/raw.axt
-HM_all_lastz_mThreads.pl --Species $name ${name}x --notrivial --radius=5000 --threads=$threads --identity=$identity \
+perl ../bin/HM_all_lastz_mThreads.pl --Species $name ${name}x --notrivial --radius=5000 --threads=$threads --identity=$identity \
   --targetSize=$targetSize --querySize=$querySize --Force --Delete \
   1>_B1.all_lastz.log 2>>_B1.all_lastz.log
 

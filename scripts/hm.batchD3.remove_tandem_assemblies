@@ -56,7 +56,8 @@ echo
 #### ===========================================================
 #### remove tandems and output new haploid assembly
 #### ===========================================================
-perl /users/jfsanchez/JFSH_software/HaploMerger2/HaploMerger2_20161205/bin/XHM_tandemAssemblyRemover.pl --Species $name ${name}x \
+
+perl ../bin/XHM_tandemAssemblyRemover.pl --Species $name ${name}x \
   --filter=$filterAli         \
   --runChainNet=$runChainNet  \
   --minXversusY=$XvY          \

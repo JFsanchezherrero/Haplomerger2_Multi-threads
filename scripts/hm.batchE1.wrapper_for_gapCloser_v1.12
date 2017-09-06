@@ -4,9 +4,9 @@
 
 #### setting variables
 name=$1								# the species_name or the prefix of the genome file name
-threads=$2					  	# the number of cpu cores to use (default=1)
+threads=1					  	# the number of cpu cores to use (default=1)
 configFile="libraries/gapCloser.cfg"      # the configFile for GapCloser v1.12
- # this parameter is transfered to the '-b' option of GapCloser v1.12
+																			    # this parameter is transfered to the '-b' option of GapCloser v1.12
 																			      																			       
 
 ###################################################################################################
@@ -48,9 +48,9 @@ echo
 #### preparation for gap filling
 #### ===========================================================
 
-gunzip -c ${name}.fa.gz | scf2agp1_1.pl --ngap >${name}.agp
+gunzip -c ${name}.fa.gz | perl ../bin/scf2agp1_1.pl --ngap >${name}.agp
 
-GF_gapfilling_preparation.pl \
+perl ../bin/GF_gapfilling_preparation.pl \
 	--scf=${name}.fa.gz   \
 	--agp=${name}.agp
 
@@ -72,7 +72,7 @@ gunzip ${name}.gf/${name}.ad.fa.gz
 ## -t threads number
 ## -l max read length (<=155)
  
-GapCloser -l 155 -p 31 \
+../gapCloser_v1.12/GapCloser   -l 155 -p 31 \
   -t $threads                  \
 	-b $configFile               \
 	-a ${name}.gf/${name}.ad.fa  \
@@ -83,13 +83,13 @@ GapCloser -l 155 -p 31 \
 #### extract gap-finishing contigs and recreate new scaffolds
 #### ===========================================================
 
-GF_extract_filling_ctgs_for_gc1.12.pl \
+perl ../bin/GF_extract_filling_ctgs_for_gc1.12.pl \
 	--fasta=${name}.gf/${name}.gc.fa      \
 	--info=${name}.gf/${name}.gc.fa.fill  \
 	1>${name}.gf/${name}.gc.fa.fill.fctgs \
 	2>_E1.reconstructAssembly.log
 
-GF_rebuid_scf_with_gap4fill_and_fctgs.pl  \
+perl ../bin/GF_rebuid_scf_with_gap4fill_and_fctgs.pl  \
 	--fctgs=${name}.gf/${name}.gc.fa.fill.fctgs \
 	--g4f=${name}.gf/${name}.ad.gap4fill        \
 	--scf=${name}.fa.gz                         \
