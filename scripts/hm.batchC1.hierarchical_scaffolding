@@ -4,7 +4,7 @@
 
 #### setting variables
 name=$1								# the species_name or the prefix of the genome file name
-threads=1							# the number of cpu cores to use (default=1)
+threads=$2							# the number of cpu cores to use (default=1)
 											# this parameter is transfered to the '-T' option of SSPACE
 minimumLinks=5        # Minimum number of links (read pairs) to compute scaffold (def=5; recommend=3-10)
 											# this parameter is transfered to the '-k' option of SSPACE
@@ -67,7 +67,9 @@ gunzip -c $name.fa.gz >$name.ss/$name.fa
 #NOTE THAT for the HaploMerger pipeline, -x should be set to 0 to prevent contig extention.
 #NOTE THAT the main program of SSPACE should be accessible.
 
-perl ../SSPACE-STANDARD-3.0_linux-x86_64/SSPACE_Standard_v3.0.pl  \
+
+SSPACE_Basic_v2.0.pl \
+#SSPACE_Standard_v3.0.pl  \
   -s ${name}.ss/$name.fa      \
   -b ${name}.ss    \
   -T $threads      \
@@ -85,8 +87,8 @@ perl ../SSPACE-STANDARD-3.0_linux-x86_64/SSPACE_Standard_v3.0.pl  \
 #### ===========================================================
 
 cat ${name}.ss/${name}.ss.final.scaffolds.fasta \
-	| perl ../bin/rename4sspace.pl \
-	| perl ../bin/faDnaPolishing.pl --legalizing --noLeadingN 2>_C1.faDnaPolishing.log \
+	| rename4sspace.pl \
+	| faDnaPolishing.pl --legalizing --noLeadingN 2>_C1.faDnaPolishing.log \
 	>${name}.ss/${name}.ss.final.scaffolds.fasta2 
  
  

@@ -44,20 +44,20 @@ echo
 
 name_alt=${name/_ref/_alt}
 
-perl ../bin/scf2scf_exact_position_locator.pl \
+scf2scf_exact_position_locator.pl \
   ${name}.ss/${name}.ss.final.scaffolds.fasta2 \
   ${name}.fa.gz    \
   1>${name}.ss/ss_new2old_scaffolds.txt 2>_C2.new_ref_and_alt_scf.log
 
-perl ../bin/scf2scf_assembly_recreation.pl \
+scf2scf_assembly_recreation.pl \
   ${name}.fa.gz \
   ${name}.ss/ss_new2old_scaffolds.txt 2>>_C2.new_ref_and_alt_scf.log \
-	| perl ../bin/faDnaPolishing.pl --legalizing --noLeadingN 2>>_C2.faDnaPolishing.log \
+	| faDnaPolishing.pl --legalizing --noLeadingN 2>>_C2.faDnaPolishing.log \
 	| gzip -c >${name}_C.fa.gz
 
-perl ../bin/scf2scf_assembly_recreation.pl \
+scf2scf_assembly_recreation.pl \
   ${name_alt}.fa.gz \
   ${name}.ss/ss_new2old_scaffolds.txt 2>>_C2.new_ref_and_alt_scf.log \
-	| perl ../bin/faDnaPolishing.pl --legalizing --noLeadingN 2>>_C2.faDnaPolishing.log \
+	| faDnaPolishing.pl --legalizing --noLeadingN 2>>_C2.faDnaPolishing.log \
 	| gzip -c >${name_alt}_C.fa.gz
  

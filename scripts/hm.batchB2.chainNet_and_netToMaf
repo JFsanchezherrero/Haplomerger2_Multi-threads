@@ -6,7 +6,7 @@
 
 #### setting variables
 name=$1								# the species_name or the prefix of the genome file name
-threads=1							# the number of cpu cores to use (default=1)
+threads=$2							# the number of cpu cores to use (default=1)
 
 ###################################################################################################
 #### running
@@ -59,7 +59,7 @@ echo
 #### run axtChainRecipBestNet
 #### ===========================================================
 		
-perl ../bin/HM_axtChainRecipBestNet.pl --rbestNet --axtChain --tbest --zeroMinSpaceNet --threads=$threads \
+HM_axtChainRecipBestNet.pl --rbestNet --axtChain --tbest --zeroMinSpaceNet --threads=$threads \
 	--axtSuffix=axt.self.notrivial --linearGap=medium --minScore=1000 --minScore2=2000 \
 	--Species $name ${name}x --Force --Delete \
 	1>_B2.axtChainRecipBestNet.log 2>>_B2.axtChainRecipBestNet.log
@@ -71,14 +71,14 @@ perl ../bin/HM_axtChainRecipBestNet.pl --rbestNet --axtChain --tbest --zeroMinSp
 rm -f $name.${name}x.result/mafFiltered.net.gz
 ln -s all.rbest.net.gz $name.${name}x.result/mafFiltered.net.gz
 
-perl ../bin/HM_netToAxtMaf.pl    \
+HM_netToAxtMaf.pl    \
   --Species $name ${name}x       \
   --Force                        \
   --netFile=mafFiltered.net.gz   \
   --chainFile=all.rbest.chain.gz \
   1>_B2.netToMaf.log 2>>_B2.netToMaf.log
 
-perl ../bin/mafSplitByTarget.pl                \
+mafSplitByTarget.pl                \
   $name.${name}x.result/mafFiltered.net.maf.gz \
   1>>_B2.netToMaf.log 2>>_B2.netToMaf.log
 
