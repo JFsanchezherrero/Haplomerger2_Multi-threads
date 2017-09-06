@@ -71,7 +71,5 @@ ln -s $name.seq ${name}x.seq
 ## require two control files: 1) all_lastz.ctl|$name.{name}x.ctl, and 2) scoreMatrix.q|$name.${name}x.q
 
 rm -f -r $name.${name}x.result/raw.axt
-HM_all_lastz_mThreads.pl --Species $name ${name}x --noself --threads=$threads --identity=$identity \
-  --targetSize=$targetSize --querySize=$querySize --Force --Delete \
-  1>_A1.all_lastz.log 2>>_A1.all_lastz.log
+HM_all_lastz_mThreads.pl --Species $name ${name}x --noself --threads=$threads --identity=$identity --targetSize=$targetSize --querySize=$querySize --Force --Delete 1>_A1.all_lastz.log 2>>_A1.all_lastz.log
 
