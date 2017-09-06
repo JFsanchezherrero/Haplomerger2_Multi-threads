@@ -124,6 +124,15 @@ unless ($Arg_list =~ m/--Species\s+([^-]*)/) {die "No --Species argument or spec
 unless (@Species = $1 =~ m/(\w+)/g)  {die "No species names found!\n" };
 print "Species included: ", @Species, "\n";
 
+my $threads;
+if ($Arg_list =~ m/--threads=(\d+)\s+/) {
+	$threads = $1;
+	print "Threads: $threads CPUs to use\n";
+};
+
+exit();
+
+
 # read in the fa.gz file
 my %fasta; #{species}->{name}=seq
 my %fa_names; ##{species}->[names list]
