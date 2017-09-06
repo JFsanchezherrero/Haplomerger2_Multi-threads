@@ -269,6 +269,8 @@ sub faSize {
 	}
 	$pm->wait_all_children; print "\n** All child processes have finished...\n\n";
 	system ("cat $tmpDir/*sizes >> $file_name.sizes");
+	system ("rm $tmpDir/*sizes");
+	
 	print "====faSize done!====\n\n";	
 }
 
