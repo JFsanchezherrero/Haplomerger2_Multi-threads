@@ -69,7 +69,6 @@ gunzip -c $name.fa.gz >$name.ss/$name.fa
 
 
 SSPACE_Basic_v2.0.pl \
-#SSPACE_Standard_v3.0.pl  \
   -s ${name}.ss/$name.fa      \
   -b ${name}.ss    \
   -T $threads      \
