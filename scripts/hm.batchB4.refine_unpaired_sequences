@@ -54,13 +54,7 @@ echo
 #### ===========================================================
 #### refine the unpaired sequences
 #### ===========================================================
-
-HM_unincorpRefiner.pl --Species $name ${name}x \
-  --runLastzChainNet=$runLastzChainNet --threads=$threads  \
-	--identity=$identity --maskFilter=$maskFilter            \
-	--redundantFilter=$redundantFilter --Force --Delete      \
-	1>_B4.unincorpRefiner.log 2>>_B4.unincorpRefiner.log
-
+HM_unincorpRefiner.pl --Species $name ${name}x --runLastzChainNet=$runLastzChainNet --threads=$threads --identity=$identity --maskFilter=$maskFilter --redundantFilter=$redundantFilter --Force --Delete 1>_B4.unincorpRefiner.log 2>>_B4.unincorpRefiner.log
 mv -f _hm.un_initiation.log _B4.un_initiation.log
 mv -f _hm.un_all_lastz.log _B4.un_all_lastz.log
 mv -f _hm.un_axtChainRecipBestNet.log _B4.un_axtChainRecipBestNet.log

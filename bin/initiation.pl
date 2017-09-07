@@ -122,99 +122,99 @@ if ($Arg_list =~ m/--Force/) {
 $,=' ';
 
 # Store species names
-my $file_name;
-unless ($Arg_list =~ m/--Species\s+(\S+)/) {die "No --Species argument or species_names found!\n" }
-$file_name = $1;
-print "Species included: ", $file_name, "\n";
+my @Species;
+unless ($Arg_list =~ m/--Species\s+([^-]*)/) {die "No --Species argument or species_names found!\n" }
+unless (@Species = $1 =~ m/(\w+)/g)  {die "No species names found!\n" };
+print "Species included: ".join(",",@Species)."\n";
 
-print "Thread number is set to ... ";
+#my $file_name;
+#unless ($Arg_list =~ m/--Species\s+(\S+)/) {die "No --Species argument or species_names found!\n" }
+#$file_name = $1;
+#print "Species included: ", $file_name, "\n";
+
 my $threads = 1;
-if ($Arg_list =~ m/--threads=(\d+)/){
-	$threads = $1 > 0 ? $1 : 1;
-}
-print "$threads !\n";
+if ($Arg_list =~ m/--threads=(\d+)/){ $threads = $1 > 0 ? $1 : 1; }
+print "Thread number is set to ... $threads !\n";
 
 my $tmpDir = "./intermediate_results";
 mkdir $tmpDir, 0755;
+my %Species_files;
+for (my $i=0; $i < scalar @Species; $i++) {
+	
+	print "Reading: ".$Species[$i]."\n";
+	
+	## Split given fasta file in as many CPUs as expected and send multiple threads for each
+	# Splits fasta file and takes into account to add the whole sequence if it is broken
 
-## Split given fasta file in as many CPUs as expected and send multiple threads for each
-# Splits fasta file and takes into account to add the whole sequence if it is broken
-my $file = $file_name.".fa";
-my $file_size = -s $file; #To get only size
-my $block = int($file_size/$threads);
-
-open (FH, "<$file") or die "Could not open source file. $!";
-print "\t- Splitting file into blocks of $block characters aprox ...\n";
-my $j = 0; 
-my @Species;
-my @name = split("/", $file);
-while (1) {
-		my $chunk;
-		my $block_file = $tmpDir."/".$file_name."_part-".$j."_tmp.fasta";
-		push (@Species, $block_file);
-		open(OUT, ">$block_file") or die "Could not open destination file";
-		if (!eof(FH)) { read(FH, $chunk,$block);  
-				if ($j > 0) { $chunk = ">".$chunk; }
-				print OUT $chunk;
-		} ## Print the amount of chars  
-		if (!eof(FH)) { $chunk = <FH>; print OUT $chunk; } ## print the whole line if it is broken      
-		if (!eof(FH)) { 
-				$/ = ">"; ## Telling perl where a new line starts
-				$chunk = <FH>; chop $chunk; print OUT $chunk; 
-				$/ = "\n";
-		} ## print the sequence if it is broken
-		$j++; close(OUT); last if eof(FH);
+	my $GZ_file = $Species[$i].".fa.gz";
+  	my $fa_file = $Species[$i].".fa";
+  	if (-f $GZ_file){ system("gunzip $GZ_file"); } elsif (-f $fa_file) {} else {die "File missing\n";}
+  	
+	my $file_size = -s $fa_file; #To get only size
+	my $block = int($file_size/$threads);
+	
+	open (FH, "<$fa_file") or die "Could not open source file. $!";
+	print "\t- Splitting file into blocks of $block characters aprox ...\n";
+	my $j = 0; 
+	while (1) {
+			my $chunk;
+			my $block_file = $tmpDir."/".$Species[$i]."_part-".$j."_tmp.fasta";
+			push (@{ $Species_files{$Species[$i]} }, $block_file);
+			
+			open(OUT, ">$block_file") or die "Could not open destination file";
+			if (!eof(FH)) { read(FH, $chunk,$block);  
+					if ($j > 0) { $chunk = ">".$chunk; }
+					print OUT $chunk;
+			} ## Print the amount of chars  
+			if (!eof(FH)) { $chunk = <FH>; print OUT $chunk; } ## print the whole line if it is broken      
+			if (!eof(FH)) { 
+					$/ = ">"; ## Telling perl where a new line starts
+					$chunk = <FH>; chop $chunk; print OUT $chunk; 
+					$/ = "\n";
+			} ## print the sequence if it is broken
+			$j++; close(OUT); last if eof(FH);
+	}
+	close(FH);
 }
-close(FH);
-
-open(OUT, ">myFiles.txt");
-for (my $i=0; $i <scalar @Species; $i++) {
-	print OUT $Species[$i]."\n";
-}
-close (OUT);
+## print Dumper \%Species_files;
 
 # read in the fasta file
 my %fasta; #{species}->{name}=seq
-my %fa_names; ##{species}->[names list]
-foreach my $temp (@Species){
+foreach my $keys (keys %Species_files) {
   
-  print "\t- Reading: $temp\n";  
-  $fasta{$temp}={};  
-  my $inFH;
-  unless(-f $temp){ die "Can not find $temp file!\n"; }
-  open($inFH, "<$temp") or die "Can not open $temp file!\n";
-  
-  my ($line,$name,$seq,$is_the_end)=("","","",0);
-  
-  while($line=<$inFH>){
-  	last if $line =~ m/^>/;
-  }	
-  die "Problems with the fasta file; no symbol > found !\n" unless defined($line);  
-  while($is_the_end==0){
-  	
-  	($name,$seq)=('','');
-  	if($line =~ m/^>(\S+)/){ $name=$1; }
-    if(length($name)<1){ die "Species ( $temp ) : fasta name format error.\n"; }
-    push @{$fa_names{$temp}},$name;
-  
-  	while($line=<$inFH>){
-  		last if $line =~ m/^>/;
-  		chomp $line;
-  		$seq .= $line;
-  	}
-  	$is_the_end=1 unless defined($line);
-  	
-  	if($seq=~m/[^acgtACGTnN]/){
-  	  die "File ( $temp ) has a sequence ( $name ) containing illegal characters !\n";
-  	}
-  	
-  	if(!defined($fasta{$temp}->{$name})){
-  	  $fasta{$temp}->{$name}=$seq;
-  	}else{
-  	  die "File ( $temp ) has a duplicate seq name ($name  ) !\n";
-  }}
-  close $inFH;
-}
+  my @files = @{ $Species_files{$keys} };
+  for (my $g=0; $g < scalar @files; $g++) {  
+	  my $inFile = $files[$g];
+	  print $inFile."\n";
+	  $fasta{$keys}{ $inFile }={};
+	  my $inFH;
+	  unless(-f $inFile){ die "Can not find $inFile file!\n"; }
+	  open($inFH, "<$inFile") or die "Can not open $inFile file!\n";
+	  
+	  my ($line,$name,$seq,$is_the_end)=("","","",0);
+	  while($line=<$inFH>){ last if $line =~ m/^>/;  }	
+	  die "Problems with the fasta file; no symbol > found !\n" unless defined($line);  
+	
+	  while($is_the_end==0){
+		($name,$seq)=('','');
+		if($line =~ m/^>(\S+)/){ $name=$1; }
+		if(length($name)<1){ die "Species ($keys) - $inFile: fasta name format error.\n"; }
+	  
+		while($line=<$inFH>){
+			last if $line =~ m/^>/;
+			chomp $line;
+			$seq .= $line;
+		}
+		$is_the_end=1 unless defined($line);
+		if($seq=~m/[^acgtACGTnN]/){ die "File ( $inFile ) has a sequence ( $name ) containing illegal characters !\n"; }
+		if(!defined($fasta{$keys}{$inFile}{$name})){
+		  $fasta{$keys}{$inFile}{$name}=$seq;
+		}else{
+		  die "File ( $keys ) has a duplicate seq name ($name  ) !\n";
+	  	}
+	}
+	close $inFH;
+}}
 
 sub faSplit;
 sub faToNib;
@@ -237,7 +237,6 @@ print "\n\n========== Time used = ", time()-$timer, " seconds or ", (time()-$tim
 
 ####
 sub faSize {
-	my ($temp1, $temp2, $has_sizes, $sizeFH);
 	print "====faSize started!====\n";
 	
 	##Step1: check for existing sizes file, if existes, die or not depends on the $Force
@@ -245,70 +244,65 @@ sub faSize {
 	
 	##Step2: create the sizes files	
 	## Parallelize
-	my $pm =  new Parallel::ForkManager($threads); ## Number of subprocesses not equal to CPUs. Each subprocesses will have multiple CPUs if available
-	$pm->run_on_finish( 
-		sub { my ($pid, $exit_code, $ident) = @_; 
-		print "\n\n** Child process finished with PID $pid and exit code: $exit_code\n\n"; 
-	} );
-	$pm->run_on_start( sub { my ($pid,$ident)=@_; } );
-	
-	my $counter = 0;
-	foreach $temp1 (@Species) {
-		$counter++;
-		my $pid = $pm->start($temp1, $counter) and next; print "\nSending child command\n\n";
+	foreach my $keys (keys %Species_files) {
+		my $pm =  new Parallel::ForkManager($threads); ## Number of subprocesses not equal to CPUs. Each subprocesses will have multiple CPUs if available
+		$pm->run_on_finish( sub { my ($pid, $exit_code, $ident) = @_; print "\n\n** Child process finished with PID $pid and exit code: $exit_code\n\n"; } );
+		$pm->run_on_start( sub { my ($pid,$ident)=@_; } );
+
+		my @files2check = @{ $Species_files{$keys} };
+		for (my $j = 0; $j < scalar @files2check; $j++) {
+			my $pid = $pm->start($j) and next; print "\nSending child command\n\n";
 		
-		my $tmp_sizeFile = $temp1.".sizes";
-		print "Printing into: $tmp_sizeFile\n";
-		
-		open($sizeFH, ">$tmp_sizeFile") or die "Can not open $tmp_sizeFile!\n";	  
-    	
-    	foreach $temp2 (keys %{ $fasta{$temp1} } ) {
-			print $sizeFH "$temp2\t".length($fasta{$temp1}->{$temp2})."\n";
-		} close $sizeFH;
-		$pm->finish($counter); # pass an exit code to finish
+			my $tmp_sizeFile = $files2check[$j].".sizes";
+			print "Printing into: $tmp_sizeFile\n";
+			my $sizeFH;
+			open($sizeFH, ">$tmp_sizeFile") or die "Can not open $tmp_sizeFile!\n";	  
+    		foreach my $temp2 (keys %{ $fasta{$keys}{$files2check[$j]} } ) {
+				print $sizeFH "$temp2\t".length( $fasta{$keys}{$files2check[$j]}{$temp2})."\n";
+			} close $sizeFH;
+
+			$pm->finish($j); # pass an exit code to finish
+		}
+		$pm->wait_all_children; print "\n** All child processes have finished...\n\n";
+		system ("cat $tmpDir/$keys*sizes >> $keys.sizes");
+		#system ("rm $tmpDir/$keys*sizes");
 	}
-	$pm->wait_all_children; print "\n** All child processes have finished...\n\n";
-	system ("cat $tmpDir/*sizes >> $file_name.sizes");
-	system ("rm $tmpDir/*sizes");
 	
 	print "====faSize done!====\n\n";	
 }
 
 ####
 sub faSplit {
-	my ($temp, $has_dir, $sfaFH);
 	print "====faSplit started!====\n";
 	
 	#checking the existing directory
 	print "Checking existing directories ... \n";
-	mkdir("$file_name.seq.fa");
 	
 	#spliting files
-	## Parallelize
-	my $pm =  new Parallel::ForkManager($threads); ## Number of subprocesses not equal to CPUs. Each subprocesses will have multiple CPUs if available
-	$pm->run_on_finish( 
-		sub { my ($pid, $exit_code, $ident) = @_; 
-		print "\n\n** Child process finished with PID $pid and exit code: $exit_code\n\n"; 
-	} );
-	$pm->run_on_start( sub { my ($pid,$ident)=@_; } );
-	my $counter = 0;
-	foreach $temp (@Species) {
-		$counter++;
-		my $pid = $pm->start($temp, $counter) and next; print "\nSending child command\n\n";
-		
-		foreach my $tt (keys %{$fasta{$temp} }){
-			open($sfaFH, ">$file_name.seq.fa/$tt.fa") or die "Can not open $file_name.seq.fa/Stt.fa!\n";
-			print $sfaFH ">$tt\n$fasta{$temp}->{$tt}\n";
-			close $sfaFH;
-		}
-		print "$temp has been added to into $file_name.seq.fa/\n";
-		$pm->finish($counter); # pass an exit code to finish
-	}
-	$pm->wait_all_children; print "\n** All child processes have finished...\n\n";
-
+	foreach my $keys (keys %Species_files) {
+		mkdir("$keys.seq.fa");
 	
+		my $pm =  new Parallel::ForkManager($threads); ## Number of subprocesses not equal to CPUs. Each subprocesses will have multiple CPUs if available
+		$pm->run_on_finish( sub { my ($pid, $exit_code, $ident) = @_; print "\n\n** Child process finished with PID $pid and exit code: $exit_code\n\n"; } );
+		$pm->run_on_start( sub { my ($pid,$ident)=@_; } );
+
+		my @files2check = @{ $Species_files{$keys}};
+		for (my $j = 0; $j < scalar @files2check; $j++) {
+			my $pid = $pm->start($j) and next; print "\nSending child command\n\n";
+		
+    		foreach my $temp2 (keys %{ $fasta{$keys}{$files2check[$j]} } ) {
+				my $sfaFH;
+				open($sfaFH, ">$keys.seq.fa/$temp2.fa") or die "Can not open $keys.seq.fa/$temp2.fa!\n";
+				my $seq = $fasta{ $keys }{ $files2check[$j]}{$temp2};
+				print $sfaFH ">$temp2\n$seq\n";
+				close $sfaFH;
+			} 
+			$pm->finish($j); # pass an exit code to finish
+			print "$files2check[$j] has been added to into $keys.seq.fa/\n";
+		}
+		$pm->wait_all_children; print "\n** All child processes have finished...\n\n";
+	}
 	# after this, the fasta sequences are no longer needed to be kept in the memory.
-	undef %fasta;
 	print "====faSplit done!====\n\n";
 }
 
@@ -317,69 +311,38 @@ sub faToNib {
 	my ($temp1, $temp2, $has_nib, $has_fa, $cmd);
 	print "====faToNib started!====\n";
 	
-	#Step1: checking the existing directory and make it if not existed
-	print "Checking existing directories ... \n";
-	mkdir("$file_name.seq") or die "Can not make directory $file_name.seq!\n"; 
+	#spliting files
+	foreach my $keys (keys %Species_files) {
+		
+		#Step1: checking the existing directory and make it if not existed
+		print "Checking existing directories ... \n";
+		mkdir("$keys.seq");
 	
-	##Step2: checking the existence of nib and fa files in the directory
-	#if no fa files, die!
-	#if containing nib files, die or not depends on the $Force argument 	
-	#foreach $temp1 (@Species) {
-		#print "Checking diretory $temp1.seq.fa ...\n";
-		#opendir($dirH, "$temp1.seq.fa") or die "Can not open directory $temp1.seq.fa!\n";
-		#die "No files in $temp1.seq.fa! Die!\n" unless (@File_names = readdir($dirH));
-		
-		#print "Check if fa files existed ...\n";
-		#$has_fa=0;
-		#foreach $temp2 (@File_names) {
-		#	if ($temp2 =~ m/[-\.\w]+\.fa$/ and -f "$temp1.seq/$temp2") { $has_fa=1; print "$temp2\n";	}
-		#}
-		#die "No fafiles found! Die!\n" if ($has_fa==0);
-		
-		#print "Check if existing nib files which might be over-written ...\n";
-		#$has_nib=0;
-		#foreach $temp2 (@File_names) {
-		#	if($temp2 =~ m/[-\.\w]+\.nib$/ and -f "$temp1.seq/$temp2") { $has_nib=1; print "$temp2\n"; }
-		#}
-		#die "existing nib files found! Die!\n" if ($has_nib==1 and $Force==0);
-		#print "existing nib files found! Forced to going on ...\n" if ($has_nib==1 and $Force==1);
-		#close $dirH;
-	#}
+		##Step3: converting the fa files to nib files
+		print "converting the fa files to nib files ...\n";
+		print "Converting directory $keys.seq.fa/*.fa to $keys.seq/*.nib ...\n";
+	
+		my $pm =  new Parallel::ForkManager($threads); ## Number of subprocesses not equal to CPUs. Each subprocesses will have multiple CPUs if available
+		$pm->run_on_finish( sub { my ($pid, $exit_code, $ident) = @_; print "\n\n** Child process finished with PID $pid and exit code: $exit_code\n\n"; } );
+		$pm->run_on_start( sub { my ($pid,$ident)=@_; } );
 
-	##Step3: converting the fa files to nib files
-	print "converting the fa files to nib files ...\n";
-	print "Converting directory $file_name.seq.fa/*.fa to $file_name.seq/*.nib ...\n";
-
-	## Parallelize
-	my $pm =  new Parallel::ForkManager($threads); ## Number of subprocesses not equal to CPUs. Each subprocesses will have multiple CPUs if available
-	$pm->run_on_finish( 
-		sub { my ($pid, $exit_code, $ident) = @_; 
-		print "\n\n** Child process finished with PID $pid and exit code: $exit_code\n\n"; 
-	} );
-	$pm->run_on_start( sub { my ($pid,$ident)=@_; } );
-	my $counter = 0;
-
-	foreach $temp1 (@Species) {
-		$counter++;
-		my $pid = $pm->start($temp1, $counter) and next; print "\nSending child command\n\n";
-		my $rv;
-		foreach $temp2 (@{$fa_names{$temp1}}) {
-			#if(-f "$temp1.seq.fa/$temp2.fa") { 
-			#	$cmd = "faToNib -softMask $temp1.seq.fa/$temp2.fa $temp1.seq/$temp2.nib";
-			#	system($cmd);
-			#	print "$temp2.fa has been converted to $temp2.nib\n";
-			#}else{
-			#  die "Can not find $temp1.seq.fa/$temp2.fa !\n"; 
-			#}
-			$rv=system("faToNib -softMask $file_name.seq.fa/$temp2.fa $file_name.seq/$temp2.nib");
-			die "Can not find $file_name.seq.fa/$temp2.fa !\n" if $rv>0;
+		my @files2check = @{ $Species_files{$keys}};
+		for (my $j = 0; $j < scalar @files2check; $j++) {
+			my $pid = $pm->start($j) and next; print "\nSending child command\n\n";
+    		foreach my $temp2 (keys %{ $fasta{$keys}{$files2check[$j]} } ) {
+				my $rv=system("faToNib -softMask $keys.seq.fa/temp2.fa $keys.seq/$temp2.nib");
+				print "faToNib -softMask $keys.seq.fa/$temp2.fa $keys.seq/$temp2.nib\n";
+				die "Can not find $keys.seq.fa/$temp2.fa !\n" if $rv>0;
+			} 
+			$pm->finish($j); # pass an exit code to finish
+			print "$files2check[$j] has been added to into $keys.seq.fa/\n";
 		}
-		$pm->finish($counter); # pass an exit code to finish
+		$pm->wait_all_children; print "\n** All child processes have finished...\n\n";
 	}
-	$pm->wait_all_children; print "\n** All child processes have finished...\n\n";
 	print "====faToNib done!====\n\n";
 }
 
+=head1
 ####
 sub tbaFaCr {
 	my ($temp1, $temp2, $missing_fa, $has_tbaFa, $sizeFH, $faFH, $tbaFH, $size, $cmd);
@@ -502,6 +465,7 @@ sub nibFrag {
 }
 
 ####
+
 sub multiFa {
 	my ($temp1, $temp2, $missing_nib, $has_fa, $cmd, $sizeFH, $size, $file_created);
 	print "====multiFa started!====\n";
@@ -559,3 +523,5 @@ sub multiFa {
 	}
 	print "====multiFa done!====\n\n";	
 }
+=tail
+

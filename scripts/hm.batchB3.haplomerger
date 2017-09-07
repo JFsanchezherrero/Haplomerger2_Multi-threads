@@ -80,9 +80,7 @@ echo
 #### preparation - to convert the net infomation
 #### ===========================================================
 
-HM_pathFinder_preparation.pl --Species $name ${name}x --Force --Delete \
-  --scoreScheme=$scoreScheme --filter=$filterScore_1 \
-  1>_B3.pathFinder_preparation.log 2>>_B3.pathFinder_preparation.log
+HM_pathFinder_preparation.pl --Species $name ${name}x --Force --Delete --scoreScheme=$scoreScheme --filter=$filterScore_1 1>_B3.pathFinder_preparation.log 2>>_B3.pathFinder_preparation.log
 
 #### ===========================================================
 #### find the paths and detect misjoins
@@ -96,10 +94,7 @@ HM_pathFinder.pl --Species $name ${name}x --Force --Delete --scoreScheme=$scoreS
 #### ===========================================================
 #### output haplomic assemblies
 #### ===========================================================
-
-XHM_haploMerger.pl --Species $name ${name}x --Force --Delete  \
-  --selectLongHaplotype --minOverlap=$minOverlap  \
-  1>_B3.haploMerger.log 2>>_B3.haploMerger.log
+XHM_haploMerger.pl --Species $name ${name}x --Force --Delete --selectLongHaplotype --minOverlap=$minOverlap 1>_B3.haploMerger.log 2>>_B3.haploMerger.log
 
 #### ===========================================================
 #### remove leading and trailing Ns from the scaffold sequences
