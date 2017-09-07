@@ -109,7 +109,7 @@ if($para{"--runLastzChainNet"}>0){
 	unlink glob "unpaired.seq/*.nib";
 	unlink glob "optiNewScaffolds.seq/*.nib";
 	
-	$cmd = "initiation.pl --faSplit --faToNib --faSize --Species unpaired optiNewScaffolds --Force --Delete";
+	$cmd = "initiation.pl --faSplit --faToNib --faSize --Species unpaired optiNewScaffolds --Force --Delete --threads=" . $para{"--threads"};
 	$cmd.= " 1>_hm.un_initiation.log 2>>_hm.un_initiation.log";
 	system($cmd);
 	print "Finish ",$cmd,"\n";
