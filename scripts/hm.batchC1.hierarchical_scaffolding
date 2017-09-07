@@ -1,15 +1,11 @@
 #### hm.batchC1.hierarchical_scaffolding v1.50
 ####
 #### This shell script invocate SSPACE to rescaffold the reference haploid assembly.
-
 #### setting variables
 name=$1								# the species_name or the prefix of the genome file name
-threads=$2							# the number of cpu cores to use (default=1)
-											# this parameter is transfered to the '-T' option of SSPACE
-minimumLinks=5        # Minimum number of links (read pairs) to compute scaffold (def=5; recommend=3-10)
-											# this parameter is transfered to the '-k' option of SSPACE
-libraryList="libraries/sspace_libraries.list"    # the libary list file for SSPACE
-																			           # this parameter is transfered to the '-l' option of SSPACE
+threads=$2							# the number of cpu cores to use (default=1); this parameter is transfered to the '-T' option of SSPACE
+minimumLinks=5        # Minimum number of links (read pairs) to compute scaffold (def=5; recommend=3-10); this parameter is transfered to the '-k' option of SSPACE
+libraryList="libraries/sspace_libraries.list"    # the libary list file for SSPACE; this parameter is transfered to the '-l' option of SSPACE
 
 ###################################################################################################
 #### running
@@ -46,7 +42,6 @@ echo
 #### ===========================================================
 #### run SSPACE v3.0 on the reference haploid assembly
 #### ===========================================================
-
 mkdir $name.ss
 gunzip -c $name.fa.gz >$name.ss/$name.fa
 
@@ -66,28 +61,13 @@ gunzip -c $name.fa.gz >$name.ss/$name.fa
 #NOTE THAT for the HaploMerger pipeline, -n should be set to large enough to prevent contig merging.
 #NOTE THAT for the HaploMerger pipeline, -x should be set to 0 to prevent contig extention.
 #NOTE THAT the main program of SSPACE should be accessible.
+## DEFAULT: SSPACE_Basic_v2.0.pl -s ${name}.ss/$name.fa -b ${name}.ss -T $threads -k $minimumLinks -a 0.68 -x 0 -n 400000 -z 500 -p 0 -l $libraryList 1>_C1.scaffolding.log 2>>_C1.scaffolding.log
 
-
-SSPACE_Basic_v2.0.pl \
-  -s ${name}.ss/$name.fa      \
-  -b ${name}.ss    \
-  -T $threads      \
-  -k $minimumLinks \
-  -a 0.68          \
-  -x 0             \
-  -n 400000        \
-  -z 500           \
-  -p 0             \
-  -l $libraryList  \
-  1>_C1.scaffolding.log 2>>_C1.scaffolding.log
+SSPACE_Basic_v2.0.pl -s ${name}.ss/$name.fa -b ${name}.ss -T $threads -k $minimumLinks -a 0.68 -x 1 -n 4000 -p 0 -l $libraryList 1>_C1.scaffolding.log 2>>_C1.scaffolding.log
 
 #### ===========================================================
 #### polish the new reference haploid assembly
 #### ===========================================================
-
-cat ${name}.ss/${name}.ss.final.scaffolds.fasta \
-	| rename4sspace.pl \
-	| faDnaPolishing.pl --legalizing --noLeadingN 2>_C1.faDnaPolishing.log \
-	>${name}.ss/${name}.ss.final.scaffolds.fasta2 
+cat ${name}.ss/${name}.ss.final.scaffolds.fasta | rename4sspace.pl | faDnaPolishing.pl --legalizing --noLeadingN 2>_C1.faDnaPolishing.log >${name}.ss/${name}.ss.final.scaffolds.fasta2 
  
  
