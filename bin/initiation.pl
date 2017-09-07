@@ -148,7 +148,9 @@ for (my $i=0; $i < scalar @Species; $i++) {
 
 	my $GZ_file = $Species[$i].".fa.gz";
   	my $fa_file = $Species[$i].".fa";
-  	if (-f $GZ_file){ system("gunzip $GZ_file"); } elsif (-f $fa_file) {} else {die "File missing\n";}
+  	if (-f $GZ_file){ 
+  		system("gunzip -c $GZ_file > $fa_file"); 
+  	} elsif (-f $fa_file) {} else {die "File missing\n";}
   	
 	my $file_size = -s $fa_file; #To get only size
 	my $block = int($file_size/$threads);
