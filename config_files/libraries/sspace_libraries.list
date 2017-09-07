@@ -1,0 +1,4 @@
+Lib1 bwa libraries/pe2kb40bp.1.fa.gz libraries/pe2kb40bp.2.fa.gz  2200 0.30 FR
+Lib1 bwa libraries/pe3kb40bp.1.fa.gz libraries/pe3kb40bp.2.fa.gz  2741 0.30 FR
+Lib2 bwa libraries/pe8kb40bp.1.fa.gz libraries/pe8kb40bp.2.fa.gz  9500 0.25 FR
+Lib3 bwa libraries/pe20kb40bp.1.fa.gz libraries/pe20kb40bp.2.fa.gz  22000 0.30 FR
