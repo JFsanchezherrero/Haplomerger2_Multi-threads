@@ -330,8 +330,8 @@ sub faToNib {
 		for (my $j = 0; $j < scalar @files2check; $j++) {
 			my $pid = $pm->start($j) and next; print "\nSending child command\n\n";
     		foreach my $temp2 (keys %{ $fasta{$keys}{$files2check[$j]} } ) {
-				my $rv=system("faToNib -softMask $keys.seq.fa/temp2.fa $keys.seq/$temp2.nib");
-				print "faToNib -softMask $keys.seq.fa/$temp2.fa $keys.seq/$temp2.nib\n";
+				my $rv=system("faToNib -softMask $keys.seq.fa/$temp2.fa $keys.seq/$temp2.nib");
+				#print "faToNib -softMask $keys.seq.fa/$temp2.fa $keys.seq/$temp2.nib\n";
 				die "Can not find $keys.seq.fa/$temp2.fa !\n" if $rv>0;
 			} 
 			$pm->finish($j); # pass an exit code to finish
