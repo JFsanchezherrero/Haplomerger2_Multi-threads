@@ -27,10 +27,10 @@ if [ $# -eq 0 ]
 		echo "gzip compressed fasta file called assembly_name.fa.gz ."
 		echo 
 		exit 1
-	elif [ ! -f $1.fa ]
+	elif [ ! -f $1.fa.gz ]
 	then
 		echo
-		echo "$1.fa is not found !"
+		echo "$1.fa.gz is not found !"
 		echo 
 		exit 1	
 fi
