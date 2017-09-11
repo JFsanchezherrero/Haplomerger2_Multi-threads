@@ -57,8 +57,8 @@ $,=' ';
 $|=1;
 
 #### parse the arguments
-my %para = ("--maskFilter" => 85,  "--redundantFilter" => 85,	"--Force" => 0, "--Delete" => 0, "--runLastzChainNet" => 0,
-						"--threads"=>1, "--identity"=>50  );
+my %para = ("--maskFilter" => 85,  "--redundantFilter" => 85,	"--Force" => 0, "--Delete" => 0, "--runLastzChainNet" => 0, "--threads"=>1, "--identity"=>50);
+
 # parameters with values
 while($Arg_list =~ m/(--\w+)=(\w+)/g){ 
 	if(exists($para{$1})){
@@ -141,8 +141,18 @@ unless (-f $net_name and -f $seq_name)  {die "$net_name or $seq_name files are n
 #$net_name="$out_dir/unpaired.tbest.net";
 
 #########################################
-#### unincorps[id]->[ 0:new_scaffold_name, 1:old_scaffold_name, 2:size, 3:start, 4:len, 
-####                  5:full_scaffold_or_part_of_the_scaffold, 6:N_counts, 7:lowcase_count, 8:ali_len, 9:ali_converage, 10:is_retained ]
+#### unincorps[id]->[ 	0:new_scaffold_name, 
+####			1:old_scaffold_name, 
+####                    2:size, 
+####                    3:start, 
+####                    4:len, 
+####                  	5:full_scaffold_or_part_of_the_scaffold, 
+####                    6:N_counts, 
+####                    7:lowcase_count, 
+####                    8:ali_len, 
+####                    9:ali_converage, 
+####                    10:is_retained ]
+####                    
 print "Read in $out_dir/hm.unpaired_updated ...\n";
 my $info_name="$out_dir/hm.unpaired_updated";
 my (@unincorps,%names);
@@ -214,9 +224,9 @@ close $netFH;
 #########################################
 for(my $i=0;$i<scalar(@unincorps);$i++){
 	
-	if($unincorps[$i]->[4]<500){ $unincorps[$i]->[10]=0; next; }
-	if($unincorps[$i]->[4]-$unincorps[$i]->[6]-$unincorps[$i]->[7] <500){ $unincorps[$i]->[10]=0; next; }
-	if($unincorps[$i]->[4]-$unincorps[$i]->[6]-$unincorps[$i]->[8] <500){ $unincorps[$i]->[10]=0; next; }	
+	if($unincorps[$i]->[4]<200){ $unincorps[$i]->[10]=0; next; }
+	if($unincorps[$i]->[4]-$unincorps[$i]->[6]-$unincorps[$i]->[7] <200){ $unincorps[$i]->[10]=0; next; }
+	if($unincorps[$i]->[4]-$unincorps[$i]->[6]-$unincorps[$i]->[8] <200){ $unincorps[$i]->[10]=0; next; }	
 	#if($unincorps[$i]->[4]-$unincorps[$i]->[9] <200){ $unincorps[$i]->[10]=0; next; }
 	
 	if($unincorps[$i]->[6]+$unincorps[$i]->[7] >= $para{'--maskFilter'}*$unincorps[$i]->[4]/100){ $unincorps[$i]->[10]=0; next; }
@@ -278,7 +288,7 @@ print "the size of refined unpaired scaffold portions is $size_of_unpaired_scaff
 print "\n\n";
 print "# This table contains REFINED information of the scaffolds and scaffold portions that failed to be incorporated\n";
 print "# into the new scaffold assebmly in the path_finding process.\n";
-print "# and only sequences with length >=500bp were output. \n\n";
+print "# and only sequences with length >=200bp were output. \n\n";
 print "#new_scaffold_name\told_scaffold_name\tsize\tstart\tlen\tfull_scaffold_or_part_of_the_scaffold\tN_counts\tlowcase_count\tali_len\tali_coverage\tis_retained\n";
 for(my $i=0;$i<scalar(@unincorps);$i++){
 	my $un=$unincorps[$i];

@@ -266,11 +266,11 @@ $,="";
 
 ### output size statistic
 print "\n";
-print "The haplome size is $haplome_size bp (only caculate sequences with length >= 500 bp);\n";
+print "The haplome size is $haplome_size bp (only caculate sequences with length >= 200 bp);\n";
 print "the haplome scaffold N50 number is $haplome_scaffold_N50_number;\n";
 print "the haplome scaffold N50 size is $haplome_scaffold_N50_size bp;\n";
-print "the raw size of unpaired scaffolds is $raw_size_of_unpaired_scaffolds bp (>= 500 bp);\n";
-print "the raw size of unpaired scaffold portions is $raw_size_of_unpaired_scaffold_portions bp (>= 500 bp).\n";
+print "the raw size of unpaired scaffolds is $raw_size_of_unpaired_scaffolds bp (>= 200 bp);\n";
+print "the raw size of unpaired scaffold portions is $raw_size_of_unpaired_scaffold_portions bp (>= 200 bp).\n";
 
 ###
 print "\nPrinting the optimalContinuity assembly data ...\n";
@@ -707,8 +707,7 @@ sub read_and_process_sequences(){
 			print $hapFH ">".$name."_B".$id."\toriginal_size:".$size.";original_range:".$start."-".$end.";strand:".$strand."\n";
 			while($sclen>0){ print $hapFH substr($temp,0,100,''),"\n"; $sclen-=100; }
 		}
-		close $hapFH;	
-		
+		close $hapFH;		
 		print "\n\n";
 	}	
 	
@@ -812,7 +811,7 @@ sub read_and_process_sequences(){
 	print $unFH "# into the new scaffold assebmly in the path_finding process.\n";
 	print $unFH "# These sequence may be used for further evaluation to see if they could be incorporated.\n";
 	#print $unFH "# Note that only scaffold portions longer than 5% of full scaffold length were output, \n";
-	print $unFH "# and only sequences of at least 500bp were output. \n\n";
+	print $unFH "# and only sequences of at least 200bp were output. \n\n";
 	print $unFH "# This table is not intended to be manually modified.\n\n";
 	print $unFH "#new_scaffold_name\told_scaffold_name\tsize\tstart\tlen\tfull_scaffold_or_part_of_the_scaffold\tN_counts\tlowcase_count\n";
 	for(my $i=0;$i<scalar(@unincorps);$i++){
@@ -824,11 +823,11 @@ sub read_and_process_sequences(){
 	close $unFH;	 
 	## Output unpaired_raw.fa.gz
 	if($para{'--unpaired'}==1){
-		print "Output unpaired.fa.gz (only output scaffolds with size >= 500 bp) ...\n";
+		print "Output unpaired.fa.gz (only output scaffolds with size >= 200 bp) ...\n";
 		open($un_outFH,"| gzip -c >$out_dir/unpaired.fa.gz") or die "Can't create pipe | gzip -c >$out_dir/unpaired.fa.gz !\n";		
 		$,='';
 		for(my $i=0;$i<scalar(@unincorps);$i++){
-			next if  $unincorps[$i]->[3]<500;
+			next if  $unincorps[$i]->[3]<200;
 			$zero_fill='0' x (7-length($i));
 			$sclen=length($unincorps[$i]->[7]);
 			print $un_outFH ">x",substr($unincorps[$i]->[4],0,1),"Sc",$zero_fill,$i," old_",$unincorps[$i]->[0],";size:",$unincorps[$i]->[1],";start:",$unincorps[$i]->[2],";length:",$sclen,"\n";
@@ -840,7 +839,7 @@ sub read_and_process_sequences(){
 	
 	## output total unpaired sequence sizes
 	foreach $temp (@unincorps){
-		next if $temp->[3]<500;	 #### should be < 2000
+		next if $temp->[3]<200;	 #### should be < 2000
 		$raw_size_of_unpaired_scaffolds += $temp->[3] if $temp->[4] eq "full";
 		$raw_size_of_unpaired_scaffold_portions += $temp->[3] if $temp->[4] eq "part";
 	}
@@ -920,7 +919,7 @@ sub output_optimal_assembly(){
 	$opt_nsc[$opt_id]->[1]=scalar(@portions)-1;
 	$opt_nsc[$opt_id]->[2]=$size;
 	
-	print "Printing out optimal_assembly data (only output scaffold with length >= 500 bp) ...\n";
+	print "Printing out optimal_assembly data (only output scaffold with length >= 200 bp) ...\n";
 	$,='';
 	@opt_nsc = sort { $b->[2] <=> $a->[2] } @opt_nsc;	
 	
@@ -936,7 +935,7 @@ sub output_optimal_assembly(){
 		$sclen=length($temp);
 		push @sc_sizes,$sclen;
 		$opt_nsc[$i]->[3]=$sclen; # refined-size	
-		next if $opt_nsc[$i]->[3]<500;		#### should be < 500			
+		next if $opt_nsc[$i]->[3]<200;		#### should be < 500			
 		print $optFH ">Sc",$zero_fill,$i," size:",$sclen,"bp\n";
 		while($sclen>0){ print $optFH substr($temp,0,100,''),"\n"; $sclen-=100;}
 	}
@@ -958,7 +957,7 @@ sub output_optimal_assembly(){
 		$sclen=length($temp);
 		#push @sc_sizes,$sclen;
 		#$opt_nsc[$i]->[3]=$sclen; # refined-size	
-		next if $opt_nsc[$i]->[3]<500;		#### should be < 500			
+		next if $opt_nsc[$i]->[3]<200;		#### should be < 500			
 		print $optFH ">Sc",$zero_fill,$i,"\n";
 		while($sclen>0){ print $optFH substr($temp,0,100,''),"\n"; $sclen-=100;}
 	}
@@ -993,7 +992,7 @@ sub output_optimal_assembly(){
 	### output haplome size and scaffold N50 size
 	@sc_sizes = sort { $b <=> $a } @sc_sizes;
 	foreach $temp (@sc_sizes){
-		last if $temp<500;		#### should be < 500
+		last if $temp<200;		#### should be < 500
 		$haplome_size+=$temp;
 	}
 	$temp=0;

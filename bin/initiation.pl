@@ -266,8 +266,9 @@ sub faSize {
 			$pm->finish($j); # pass an exit code to finish
 		}
 		$pm->wait_all_children; print "\n** All child processes have finished...\n\n";
-		system ("cat $tmpDir/$keys*sizes >> $keys.sizes");
-		#system ("rm $tmpDir/$keys*sizes");
+		system ("cat $tmpDir/$keys*sizes >> $keys.sizes_tmp");
+		system ("sort $keys.sizes_tmp > $keys.sizes");
+		system ("rm $tmpDir/$keys*sizes");
 	}
 	
 	print "====faSize done!====\n\n";	
