@@ -2,6 +2,9 @@
 
 use strict; 
 use warnings;
+use FindBin;
+use lib $FindBin::Bin."/lib";
+use Parallel::ForkManager;
 
 my $Arg_list = join " ", @ARGV;
 if (@ARGV < 0 || $Arg_list =~ m/--help|-\?/) { print <<'USAGES' and exit }
