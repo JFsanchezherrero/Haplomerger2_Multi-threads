@@ -5,6 +5,7 @@ use warnings;
 use FindBin;
 use lib $FindBin::Bin."/lib";
 use Parallel::ForkManager;
+use Data::Dumper;
 
 my $Arg_list = join " ", @ARGV;
 if (@ARGV < 0 || $Arg_list =~ m/--help|-\?/) { print <<'USAGES' and exit }
@@ -39,8 +40,7 @@ my @files;
 		open($inFH,"gunzip -c $fasta_name |") or die "Can not open gunzip -c $fasta_name |.\n";
 	}else{
 		open($inFH,"<$fasta_name") or die "Can not open $fasta_name.\n"; 
-	}
-	
+	}	
 	my ($line,$name,$seq,$is_the_end)=("","","",0);
 	
 	while($line=<$inFH>){
@@ -48,21 +48,17 @@ my @files;
 	}	
 	die "Problems with the fasta file; no symbol > found !\n" unless defined($line);
 	
-	while($is_the_end==0){
-		
-		($name,$seq)=('','');
-		
+	while($is_the_end==0){		
+		($name,$seq)=('','');		
 		if($line =~ m/>\s*(\S+)/){
 			$name=$1;
-		}
-	
+		}	
 		while($line=<$inFH>){
 			last if $line =~ m/^>/;
 			chomp $line;
 			$seq .= $line;
 		}
-		$is_the_end=1 unless defined($line);
-		
+		$is_the_end=1 unless defined($line);		
 		$tscfs{$name}=uc $seq;
 	}
 	close $inFH;	
@@ -158,13 +154,22 @@ foreach my $files (keys %qscfs){
 		my $flag=0;
 		foreach my $tsc_id (keys %tscfs){
 			if( $tscfs{$tsc_id} =~ m/$q_id/ ){
-				push @{$scf2scf_tmp{$tsc_id}},[$-[0],$+[0],1,$qsc_id];
+				#push @{$scf2scf_tmp{$tsc_id}},[$-[0],$+[0],1,$qsc_id];
+				push ( @{$scf2scf_tmp{$tsc_id}},$-[0]);
+				push ( @{$scf2scf_tmp{$tsc_id}},$+[0]);
+				push ( @{$scf2scf_tmp{$tsc_id}},1);
+				push ( @{$scf2scf_tmp{$tsc_id}},$qsc_id);
 				$flag+=1;
 				print STDERR "position $qsc_id in target genome >>>+ $tsc_id; times: $flag.\n";
 				last;
 			}
 			if( $tscfs{$tsc_id} =~ m/$tt/ ){
-				push @{$scf2scf_tmp{$tsc_id}},[$-[0],$+[0],-1,$qsc_id];
+				#push @{$scf2scf_tmp{$tsc_id}},[$-[0],$+[0],-1,$qsc_id];
+				push ( @{$scf2scf_tmp{$tsc_id}},$-[0]);
+				push ( @{$scf2scf_tmp{$tsc_id}},$+[0]);
+				push ( @{$scf2scf_tmp{$tsc_id}},-1);
+				push ( @{$scf2scf_tmp{$tsc_id}},$qsc_id);
+				
 				$flag+=1;
 				print STDERR "position $qsc_id in target genome >>>- $tsc_id; times: $flag.\n";
 				last;
