@@ -4,6 +4,7 @@
 
 #### setting variables
 name=$1								# the species_name or the prefix of the genome file name
+threads=$2
 
 ###################################################################################################
 #### running
@@ -44,10 +45,7 @@ echo
 
 name_alt=${name/_ref/_alt}
 
-scf2scf_exact_position_locator.pl \
-  ${name}.ss/${name}.ss.final.scaffolds.fasta2 \
-  ${name}.fa.gz    \
-  1>${name}.ss/ss_new2old_scaffolds.txt 2>_C2.new_ref_and_alt_scf.log
+scf2scf_exact_position_locator.pl ${name}.ss/${name}.ss.final.scaffolds.fasta2 ${name}.fa.gz $threads 1>${name}.ss/ss_new2old_scaffolds.txt 2>_C2.new_ref_and_alt_scf.log
 
 scf2scf_assembly_recreation.pl \
   ${name}.fa.gz \

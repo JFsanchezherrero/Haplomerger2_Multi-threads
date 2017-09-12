@@ -25,7 +25,8 @@ my $timer = time();
 
 my %tscfs;
 my %qscfs;
-my %scf2scf; #0-base; {target_sc_id}->[0:start_position(0-base),1:end_position, 2:sign, 3:query_sc_id];
+my $threads =$ARGV[2];
+my @files;
 
 #### %tscfs
 {
@@ -68,62 +69,130 @@ my %scf2scf; #0-base; {target_sc_id}->[0:start_position(0-base),1:end_position, 
 #### %qscfs
 {
 	my $fasta_name=$ARGV[1];
-	my $inFH;
-	if($fasta_name=~m/\.gz$/){
-		open($inFH,"gunzip -c $fasta_name |") or die "Can not open gunzip -c $fasta_name |.\n";
-	}else{
-		open($inFH,"<$fasta_name") or die "Can not open $fasta_name.\n"; 
+	my $tmpDir = "./intermediate_results";
+	mkdir $tmpDir, 0755;
+	my %files;
+
+	## Split given fasta file in as many CPUs as expected and send multiple threads for each
+	# Splits fasta file and takes into account to add the whole sequence if it is broken
+	
+	my $GZ_file = $fasta_name;
+	my @name = split(".fa.gz", $fasta_name);
+	my $fa_file = $name[0].".fasta";
+	if (-f $GZ_file){ 
+		system("gunzip -c $GZ_file > $fa_file"); 
+	} else { die "File missing\n"; }
+	
+	my $file_size = -s $fa_file; #To get only size
+	my $block = int($file_size/$threads);
+		
+	open (FH, "<$fa_file") or die "Could not open source file. $!";
+	print "\t- Splitting file into blocks of $block characters aprox ...\n";
+	my $j = 0; 
+	while (1) {
+			my $chunk;
+			my $block_file = $tmpDir."/".$fa_file."_part-".$j."_tmp.fasta";
+			push (@files, $block_file);
+			
+			open(OUT, ">$block_file") or die "Could not open destination file";
+			if (!eof(FH)) { read(FH, $chunk,$block);  
+					if ($j > 0) { $chunk = ">".$chunk; }
+					print OUT $chunk;
+			} ## Print the amount of chars  
+			if (!eof(FH)) { $chunk = <FH>; print OUT $chunk; } ## print the whole line if it is broken      
+			if (!eof(FH)) { 
+					$/ = ">"; ## Telling perl where a new line starts
+					$chunk = <FH>; chop $chunk; print OUT $chunk; 
+					$/ = "\n";
+			} ## print the sequence if it is broken
+			$j++; close(OUT); last if eof(FH);
 	}
-	
-	my ($line,$name,$seq,$is_the_end)=("","","",0);
-	
-	while($line=<$inFH>){
-		last if $line =~ m/^>/;
-	}	
-	die "Problems with the fasta file; no symbol > found !\n" unless defined($line);
-	
-	while($is_the_end==0){
-		
-		($name,$seq)=('','');
-		
-		if($line =~ m/>\s*(\S+)/){
-			$name=$1;
-		}
-	
+	close(FH);
+
+	for (my $j=0; $j < scalar @files; $j++) {	
+		my $inFH;
+		open($inFH,"<$files[$j]") or die "Can not open $files[$j].\n";
+		my ($line,$name,$seq,$is_the_end)=("","","",0);
 		while($line=<$inFH>){
 			last if $line =~ m/^>/;
-			chomp $line;
-			$seq .= $line;
+		}	
+		die "Problems with the fasta file; no symbol > found !\n" unless defined($line);
+		while($is_the_end==0){
+			($name,$seq)=('','');
+			if($line =~ m/>\s*(\S+)/){
+				$name=$1;
+			}
+			while($line=<$inFH>){
+				last if $line =~ m/^>/;
+				chomp $line;
+				$seq .= $line;
+			}
+			$is_the_end=1 unless defined($line);
+			$qscfs{$files[$j]}{$name}=uc $seq;
 		}
-		$is_the_end=1 unless defined($line);
-		
-		$qscfs{$name}=uc $seq;
+		close $inFH;
 	}
-	close $inFH;
 	print STDERR "Finished qscf fasta reading.\n";		
 }
 
 #### scf2scf
-foreach my $qsc_id (keys %qscfs){
-  my $tt=reverse $qscfs{$qsc_id};
-  $tt=~ tr/ACGTacgt/TGCAtgca/;
-  my $flag=0;
-  foreach my $tsc_id (keys %tscfs){
-    if( $tscfs{$tsc_id} =~ m/$qscfs{$qsc_id}/ ){
-      push @{$scf2scf{$tsc_id}},[$-[0],$+[0],1,$qsc_id];
-      $flag+=1;
-      print STDERR "position $qsc_id in target genome >>>+ $tsc_id; times: $flag.\n";
-      last;
-    }
-    if( $tscfs{$tsc_id} =~ m/$tt/ ){
-      push @{$scf2scf{$tsc_id}},[$-[0],$+[0],-1,$qsc_id];
-      $flag+=1;
-      print STDERR "position $qsc_id in target genome >>>- $tsc_id; times: $flag.\n";
-      last;
-    }    
-  }
-  print STDERR "warning: can not locate $qsc_id in target genome.\n" if $flag==0;
-  die "\nError: $qsc_id can be mapped to the target genome twice.\n\n" if $flag>1; 
+my %scf2scf; #0-base; {target_sc_id}->[0:start_position(0-base),1:end_position, 2:sign, 3:query_sc_id];
+
+my $pm =  new Parallel::ForkManager($threads); ## Number of subprocesses not equal to CPUs. Each subprocesses will have multiple CPUs if available
+$pm->run_on_finish( sub { my ($pid, $exit_code, $ident) = @_; print "\n\n** Child process finished with PID $pid and exit code: $exit_code\n\n"; } );
+$pm->run_on_start( sub { my ($pid,$ident)=@_; } );
+my $count = 0;
+foreach my $files (keys %qscfs){
+	$count++;	
+	print "Checking file: $files\n";
+	my $pid = $pm->start($count) and next; print "\nSending child command\n\n";
+	my %scf2scf_tmp; 
+
+	foreach my $qsc_id (keys %{ $qscfs{$files} } ){		
+		my $q_id = $qscfs{$files}{$qsc_id};
+		my $tt=reverse $q_id;
+		$tt=~ tr/ACGTacgt/TGCAtgca/;
+		my $flag=0;
+		foreach my $tsc_id (keys %tscfs){
+			if( $tscfs{$tsc_id} =~ m/$q_id/ ){
+				push @{$scf2scf_tmp{$tsc_id}},[$-[0],$+[0],1,$qsc_id];
+				$flag+=1;
+				print STDERR "position $q_id in target genome >>>+ $tsc_id; times: $flag.\n";
+				last;
+			}
+			if( $tscfs{$tsc_id} =~ m/$tt/ ){
+				push @{$scf2scf_tmp{$tsc_id}},[$-[0],$+[0],-1,$qsc_id];
+				$flag+=1;
+				print STDERR "position $q_id in target genome >>>- $tsc_id; times: $flag.\n";
+				last;
+			}
+		}
+		print STDERR "warning: can not locate $q_id in target genome.\n" if $flag==0;
+		die "\nError: $q_id can be mapped to the target genome twice.\n\n" if $flag>1; 
+	}
+	
+	## Once finish dump hash into tmp file
+	my $out_file = $files."_dump.txt";
+	open (DUMP, ">$out_file"); 
+	foreach my $names (sort keys %scf2scf_tmp) {
+		my @array = @{ $scf2scf_tmp{ $names } };
+		for (my $i=0; $i < scalar @array; $i++) { print DUMP $names."\t".$array[$i]."\n"; }
+	} close (DUMP);
+	$pm->finish($count); # pass an exit code to finish
+}
+$pm->wait_all_children; print "\n** All child processes have finished...\n\n";
+
+## read all hash
+for (my $j=0; $j < scalar @files; $j++) {	
+	my $out_file = $files[$j]."_dump.txt";
+	open (IN, $out_file);
+	while (<IN>) {
+		chomp;
+		my $line = $_;
+		my @array = split("\t", $line);
+		push @{$scf2scf{$array[0]} }, $array[1];
+	}
+	close (IN);
 }
 
 #### output

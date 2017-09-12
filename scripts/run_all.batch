@@ -47,7 +47,7 @@ hm.batchB5.merge_paired_and_unpaired_sequences  $1"_A"
 #### default final output: ./{assembly_name}_A_alt_C.fa.gz
 
 hm.batchC1.hierarchical_scaffolding                      $1"_A_ref" $2
-hm.batchC2.update_reference_and_alternative_assemblies   $1"_A_ref"
+hm.batchC2.update_reference_and_alternative_assemblies   $1"_A_ref" $2
 
 #### ===========================================================================
 #### step 4: remove tandem errors from haploid assemblies
