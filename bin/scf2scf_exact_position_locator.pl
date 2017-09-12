@@ -65,10 +65,11 @@ my @files;
 	print STDERR "Finished tscf fasta reading.\n";
 }
 
+my $tmpDir = "./intermediate_results";
+
 #### %qscfs
 {
 	my $fasta_name=$ARGV[1];
-	my $tmpDir = "./intermediate_results";
 	mkdir $tmpDir, 0755;
 	my %files;
 
@@ -157,13 +158,13 @@ foreach my $files (keys %qscfs){
 		my $flag=0;
 		foreach my $tsc_id (keys %tscfs){
 			if( $tscfs{$tsc_id} =~ m/$q_id/ ){
-				print DUMP $names."\t".$-[0]."\t".$+[0]."\t1\t".$qsc_id."\n";
+				print DUMP $tsc_id."\t".$-[0]."\t".$+[0]."\t1\t".$qsc_id."\n";
 				$flag+=1;
 				print STDERR "position $qsc_id in target genome >>>+ $tsc_id; times: $flag.\n";
 				last;
 			}
 			if( $tscfs{$tsc_id} =~ m/$tt/ ){
-				print DUMP $names."\t".$-[0]."\t".$+[0]."\t-1\t".$qsc_id."\n";
+				print DUMP $tsc_id."\t".$-[0]."\t".$+[0]."\t-1\t".$qsc_id."\n";
 				$flag+=1;
 				print STDERR "position $qsc_id in target genome >>>- $tsc_id; times: $flag.\n";
 				last;
@@ -179,7 +180,7 @@ foreach my $files (keys %qscfs){
 $pm->wait_all_children; print "\n** All child processes have finished...\n\n";
 
 ## read all hash
-my $tmp_file = $tmpDir."/coordinates_tmp.txt"
+my $tmp_file = $tmpDir."/coordinates_tmp.txt";
 for (my $j=0; $j < scalar @files; $j++) {	
 	my $out_file = $files[$j]."_dump.txt";
 	system("cat $out_file >> $tmp_file");
