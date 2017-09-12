@@ -154,22 +154,15 @@ foreach my $files (keys %qscfs){
 		my $flag=0;
 		foreach my $tsc_id (keys %tscfs){
 			if( $tscfs{$tsc_id} =~ m/$q_id/ ){
-				#push @{$scf2scf_tmp{$tsc_id}},[$-[0],$+[0],1,$qsc_id];
-				push ( @{$scf2scf_tmp{$tsc_id}},$-[0]);
-				push ( @{$scf2scf_tmp{$tsc_id}},$+[0]);
-				push ( @{$scf2scf_tmp{$tsc_id}},1);
-				push ( @{$scf2scf_tmp{$tsc_id}},$qsc_id);
+				my @array = [$-[0], $+[0], 1, $qsc_id];
+				push ( @{ $scf2scf_tmp{$tsc_id} }, @array);
 				$flag+=1;
 				print STDERR "position $qsc_id in target genome >>>+ $tsc_id; times: $flag.\n";
 				last;
 			}
 			if( $tscfs{$tsc_id} =~ m/$tt/ ){
-				#push @{$scf2scf_tmp{$tsc_id}},[$-[0],$+[0],-1,$qsc_id];
-				push ( @{$scf2scf_tmp{$tsc_id}},$-[0]);
-				push ( @{$scf2scf_tmp{$tsc_id}},$+[0]);
-				push ( @{$scf2scf_tmp{$tsc_id}},-1);
-				push ( @{$scf2scf_tmp{$tsc_id}},$qsc_id);
-				
+				my @array = [$-[0], $+[0], -1, $qsc_id];
+				push ( @{ $scf2scf_tmp{$tsc_id} }, @array);
 				$flag+=1;
 				print STDERR "position $qsc_id in target genome >>>- $tsc_id; times: $flag.\n";
 				last;
@@ -182,7 +175,7 @@ foreach my $files (keys %qscfs){
 	## Once finish dump hash into tmp file
 	my $out_file = $files."_dump.txt";
 	open (DUMP, ">$out_file"); 
-	foreach my $names (sort keys %scf2scf_tmp) {
+	foreach my $names (keys %scf2scf_tmp) {
 		my @array = @{ $scf2scf_tmp{ $names } };
 		for (my $i=0; $i < scalar @array; $i++) { print DUMP $names."\t".$array[$i]."\n"; }
 	} close (DUMP);
