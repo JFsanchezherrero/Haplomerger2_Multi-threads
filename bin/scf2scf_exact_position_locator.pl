@@ -176,7 +176,7 @@ foreach my $files (keys %qscfs){
 	my $out_file = $files."_dump.txt";
 	open (DUMP, ">$out_file"); 
 	foreach my $names (keys %scf2scf_tmp) {
-		my @array = @{ $scf2scf_tmp{ $names } };
+		my @array = @{ $scf2scf_tmp{ $names }[0] };
 		for (my $i=0; $i < scalar @array; $i++) { print DUMP $names."\t".$array[$i]."\n"; }
 	} close (DUMP);
 	$pm->finish($count); # pass an exit code to finish
@@ -191,7 +191,7 @@ for (my $j=0; $j < scalar @files; $j++) {
 		chomp;
 		my $line = $_;
 		my @array = split("\t", $line);
-		push @{$scf2scf{$array[0]} }, $array[1];
+		push @{$scf2scf{$array[0]}[0]}, $array[1];
 	}
 	close (IN);
 }
