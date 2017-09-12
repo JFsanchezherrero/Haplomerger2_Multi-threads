@@ -160,18 +160,18 @@ foreach my $files (keys %qscfs){
 			if( $tscfs{$tsc_id} =~ m/$q_id/ ){
 				push @{$scf2scf_tmp{$tsc_id}},[$-[0],$+[0],1,$qsc_id];
 				$flag+=1;
-				print STDERR "position $q_id in target genome >>>+ $tsc_id; times: $flag.\n";
+				print STDERR "position $qsc_id in target genome >>>+ $tsc_id; times: $flag.\n";
 				last;
 			}
 			if( $tscfs{$tsc_id} =~ m/$tt/ ){
 				push @{$scf2scf_tmp{$tsc_id}},[$-[0],$+[0],-1,$qsc_id];
 				$flag+=1;
-				print STDERR "position $q_id in target genome >>>- $tsc_id; times: $flag.\n";
+				print STDERR "position $qsc_id in target genome >>>- $tsc_id; times: $flag.\n";
 				last;
 			}
 		}
-		print STDERR "warning: can not locate $q_id in target genome.\n" if $flag==0;
-		die "\nError: $q_id can be mapped to the target genome twice.\n\n" if $flag>1; 
+		print STDERR "warning: can not locate $qsc_id in target genome.\n" if $flag==0;
+		die "\nError: $qsc_id can be mapped to the target genome twice.\n\n" if $flag>1; 
 	}
 	
 	## Once finish dump hash into tmp file
@@ -210,3 +210,28 @@ foreach my $id (sort(keys %scf2scf)){
 
 
 print STDERR "\n\n========== Time used = ", time()-$timer, " seconds or ", (time()-$timer)/3600, " hours.\n\n";
+
+
+__END__
+#### scf2scf
+foreach my $qsc_id (keys %qscfs){
+  my $tt=reverse $qscfs{$qsc_id};
+  $tt=~ tr/ACGTacgt/TGCAtgca/;
+  my $flag=0;
+  foreach my $tsc_id (keys %tscfs){
+    if( $tscfs{$tsc_id} =~ m/$qscfs{$qsc_id}/ ){
+      push @{$scf2scf{$tsc_id}},[$-[0],$+[0],1,$qsc_id];
+      $flag+=1;
+      print STDERR "position $qsc_id in target genome >>>+ $tsc_id; times: $flag.\n";
+      last;
+    }
+    if( $tscfs{$tsc_id} =~ m/$tt/ ){
+      push @{$scf2scf{$tsc_id}},[$-[0],$+[0],-1,$qsc_id];
+      $flag+=1;
+      print STDERR "position $qsc_id in target genome >>>- $tsc_id; times: $flag.\n";
+      last;
+    }
+  }
+  print STDERR "warning: can not locate $qsc_id in target genome.\n" if $flag==0;
+  die "\nError: $qsc_id can be mapped to the target genome twice.\n\n" if $flag>1;
+}
