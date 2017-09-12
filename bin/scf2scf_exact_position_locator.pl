@@ -27,9 +27,9 @@ my $timer = time();
 #### ################################
 #### reading scf
 
-my %tscfs;
-my %qscfs;
+my %tscfs; my %qscfs;
 my $threads =$ARGV[2];
+my $file_name = $ARGV[3];
 my @files;
 
 #### %tscfs
@@ -147,6 +147,9 @@ foreach my $files (keys %qscfs){
 	my $pid = $pm->start($count) and next; print "\nSending child command\n\n";
 	my %scf2scf_tmp; 
 
+	my $out_file = $files."_dump.txt";
+	open (DUMP, ">$out_file"); 
+
 	foreach my $qsc_id (keys %{ $qscfs{$files} } ){		
 		my $q_id = $qscfs{$files}{$qsc_id};
 		my $tt=reverse $q_id;
@@ -154,15 +157,13 @@ foreach my $files (keys %qscfs){
 		my $flag=0;
 		foreach my $tsc_id (keys %tscfs){
 			if( $tscfs{$tsc_id} =~ m/$q_id/ ){
-				my @array = [$-[0], $+[0], 1, $qsc_id];
-				push ( @{ $scf2scf_tmp{$tsc_id} }, @array);
+				print DUMP $names."\t".$-[0]."\t".$+[0]."\t1\t".$qsc_id."\n";
 				$flag+=1;
 				print STDERR "position $qsc_id in target genome >>>+ $tsc_id; times: $flag.\n";
 				last;
 			}
 			if( $tscfs{$tsc_id} =~ m/$tt/ ){
-				my @array = [$-[0], $+[0], -1, $qsc_id];
-				push ( @{ $scf2scf_tmp{$tsc_id} }, @array);
+				print DUMP $names."\t".$-[0]."\t".$+[0]."\t-1\t".$qsc_id."\n";
 				$flag+=1;
 				print STDERR "position $qsc_id in target genome >>>- $tsc_id; times: $flag.\n";
 				last;
@@ -171,42 +172,22 @@ foreach my $files (keys %qscfs){
 		print STDERR "warning: can not locate $qsc_id in target genome.\n" if $flag==0;
 		die "\nError: $qsc_id can be mapped to the target genome twice.\n\n" if $flag>1; 
 	}
+	close (DUMP);
 	
-	## Once finish dump hash into tmp file
-	my $out_file = $files."_dump.txt";
-	open (DUMP, ">$out_file"); 
-	foreach my $names (keys %scf2scf_tmp) {
-		my @array = @{ $scf2scf_tmp{ $names }[0] };
-		for (my $i=0; $i < scalar @array; $i++) { print DUMP $names."\t".$array[$i]."\n"; }
-	} close (DUMP);
 	$pm->finish($count); # pass an exit code to finish
 }
 $pm->wait_all_children; print "\n** All child processes have finished...\n\n";
 
 ## read all hash
+my $tmp_file = $tmpDir."/coordinates_tmp.txt"
 for (my $j=0; $j < scalar @files; $j++) {	
 	my $out_file = $files[$j]."_dump.txt";
-	open (IN, $out_file);
-	while (<IN>) {
-		chomp;
-		my $line = $_;
-		my @array = split("\t", $line);
-		push @{$scf2scf{$array[0]}[0]}, $array[1];
-	}
-	close (IN);
+	system("cat $out_file >> $tmp_file");
 }
 
 #### output
 print "#new_scaffold_id\tstart\tend\tstrand\told_scaffold_id\n";
-foreach my $id (sort(keys %scf2scf)){
-  my $tt=$scf2scf{$id};
-  @$tt = sort { $a->[0] <=> $b->[0] } @$tt;
-  for(my $i=0;$i<@$tt;$i++){
-    print "$id\t$tt->[$i][0]\t$tt->[$i][1]\t$tt->[$i][2]\t$tt->[$i][3]\n";
-  }
-}
-
-
+system("sort $tmp_file >> $file_name");
 print STDERR "\n\n========== Time used = ", time()-$timer, " seconds or ", (time()-$timer)/3600, " hours.\n\n";
 
 
